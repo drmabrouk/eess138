@@ -45,29 +45,6 @@ if (in_array('sm_student', (array)wp_get_current_user()->roles)) {
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
-    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--sm-border-color); position: relative; max-height: 320px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin:0; font-size: 1.0em;">توزيع المخالفات حسب الحدة</h3>
-            <button onclick="smDownloadChart('severityChart', 'توزيع_الحدة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 200px;"><canvas id="severityChart"></canvas></div>
-    </div>
-    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--sm-border-color); position: relative; max-height: 320px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin:0; font-size: 1.0em;">أكثر الطلاب مخالفة (تكرار)</h3>
-            <button onclick="smDownloadChart('topStudentsChart', 'أكثر_الطلاب_مخالفة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 200px;"><canvas id="topStudentsChart"></canvas></div>
-    </div>
-    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--sm-border-color); position: relative; max-height: 320px; overflow: hidden;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;">
-            <h3 style="margin:0; font-size: 1.0em;">توزيع المخالفات حسب الدرجة</h3>
-            <button onclick="smDownloadChart('degreeChart', 'توزيع_الدرجة')" class="sm-action-btn" title="تحميل كصورة" style="background:none; border:none; color:var(--sm-text-gray); cursor:pointer;"><span class="dashicons dashicons-download"></span></button>
-        </div>
-        <div style="height: 200px;"><canvas id="degreeChart"></canvas></div>
-    </div>
-</div>
 
 
 
@@ -140,46 +117,6 @@ function smDownloadChart(chartId, fileName) {
             options: chartOptions
         });
 
-        // Severity Chart
-        createOrUpdateChart('severityChart', {
-            type: 'doughnut',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s) use ($severityLabels){ return $severityLabels[$s->severity] ?? $s->severity; }, $stats['by_severity'] ?? [])); ?>,
-                datasets: [{
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['by_severity'] ?? [])); ?>,
-                    backgroundColor: ['#1E293B', '#475569', '#334155']
-                }]
-            },
-            options: chartOptions
-        });
-
-        // Top Students Chart
-        createOrUpdateChart('topStudentsChart', {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s){ return $s->name; }, $stats['top_students'] ?? [])); ?>,
-                datasets: [{
-                    label: 'عدد المخالفات',
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['top_students'] ?? [])); ?>,
-                    backgroundColor: '#334155'
-                }]
-            },
-            options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
-
-        // Degree Chart
-        createOrUpdateChart('degreeChart', {
-            type: 'bar',
-            data: {
-                labels: <?php echo json_encode(array_map(function($s){ return 'الدرجة ' . $s->degree; }, $stats['by_degree'] ?? [])); ?>,
-                datasets: [{
-                    label: 'عدد الحالات',
-                    data: <?php echo json_encode(array_map(function($s){ return $s->count; }, $stats['by_degree'] ?? [])); ?>,
-                    backgroundColor: '#1E293B'
-                }]
-            },
-            options: { ...chartOptions, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-        });
     };
 
     if (document.readyState === 'complete') initSummaryCharts();

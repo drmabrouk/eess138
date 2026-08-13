@@ -46,6 +46,19 @@ $prep_settings = get_option('sm_lesson_prep_settings', array(
 
 $deadline_time = ($prep_settings['submission_deadline'] ?? '10:00') . ':00';
 
+// Handle deleting a lesson prep
+if (isset($_POST['eess_delete_lesson_prep']) && wp_verify_nonce($_POST['eess_lesson_prep_nonce'], 'eess_lesson_prep_action')) {
+    $prep_id_to_delete = intval($_POST['delete_prep_id']);
+    if ($prep_id_to_delete > 0) {
+        $owner_id = $wpdb->get_var($wpdb->prepare("SELECT teacher_id FROM {$wpdb->prefix}sm_lesson_preps WHERE id = %d", $prep_id_to_delete));
+        if ($owner_id == $user_id || $is_admin || $is_sys_admin) {
+            $wpdb->delete("{$wpdb->prefix}sm_lesson_preps", array('id' => $prep_id_to_delete));
+            $wpdb->delete("{$wpdb->prefix}sm_lesson_comments", array('prep_id' => $prep_id_to_delete));
+            echo '<div style="background:#dcfce7; color:#15803d; padding:15px; border-radius:8px; border:1px solid #bbf7d0; font-weight:700; margin-bottom:20px; font-family:\'Cairo\'; text-align:right;">✅ تم حذف وثيقة التحضير والملاحظات التابعة لها بنجاح.</div>';
+        }
+    }
+}
+
 // Handle Form Submissions
 if (isset($_POST['eess_save_lesson_prep']) && wp_verify_nonce($_POST['eess_lesson_prep_nonce'], 'eess_lesson_prep_action')) {
     $title         = sanitize_text_field($_POST['lesson_title']);
@@ -53,15 +66,16 @@ if (isset($_POST['eess_save_lesson_prep']) && wp_verify_nonce($_POST['eess_lesso
     $grade_level   = sanitize_text_field($_POST['lesson_grade']);
     $class_section = sanitize_text_field($_POST['lesson_section']);
     $lesson_date   = sanitize_text_field($_POST['lesson_date']);
-    $status        = sanitize_text_field($_POST['lesson_status']); // draft or submitted
+    $status        = sanitize_text_field($_POST['lesson_status']); // draft or submitted or scheduled
 
     $lesson_data = array(
-        'objectives' => sanitize_textarea_field($_POST['objectives']),
-        'warmup'     => sanitize_textarea_field($_POST['warmup']),
-        'activities' => sanitize_textarea_field($_POST['activities']),
-        'evaluation' => sanitize_textarea_field($_POST['evaluation']),
-        'homework'   => sanitize_textarea_field($_POST['homework']),
-        'notes'      => sanitize_textarea_field($_POST['notes']),
+        'objectives'     => sanitize_textarea_field($_POST['objectives']),
+        'warmup'         => sanitize_textarea_field($_POST['warmup']),
+        'activities'     => sanitize_textarea_field($_POST['activities']),
+        'evaluation'     => sanitize_textarea_field($_POST['evaluation']),
+        'homework'       => sanitize_textarea_field($_POST['homework']),
+        'notes'          => sanitize_textarea_field($_POST['notes']),
+        'scheduled_time' => isset($_POST['scheduled_time']) ? sanitize_text_field($_POST['scheduled_time']) : '',
     );
 
     // Compute Late Submission status if submitted
