@@ -1,10 +1,9 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-assignments-container" dir="rtl">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h3 style="margin: 0; font-weight: 800;">الواجبات المدرسية والمرفقات</h3>
-        <?php if ($is_teacher || $is_student): ?>
-            <button onclick="document.getElementById('add-assignment-modal').style.display='flex'" class="sm-btn" style="width: auto;">+ إضافة واجب / تسليم</button>
-        <?php endif; ?>
+
+    <!-- Homework Professional Search Engine -->
+    <div style="margin-bottom: 25px;">
+        <input type="text" id="eess-homework-search" onkeyup="eessFilterHomework()" class="sm-input" placeholder="🔍 ابحث عن واجب باسم المادة، المرسل، أو العنوان..." style="height: 42px; border-radius: 8px; width: 100%; font-family: 'Cairo'; padding: 0 15px;">
     </div>
 
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #eee;">
@@ -166,5 +165,20 @@
 
 function viewAssignment(a) {
     alert("التفاصيل:\n" + a.description);
+}
+
+function eessFilterHomework() {
+    const q = document.getElementById('eess-homework-search').value.trim().toLowerCase();
+    const rows = document.querySelectorAll('.sm-table tbody tr');
+
+    rows.forEach(row => {
+        if (row.cells.length < 2) return; // Skip empty row
+        const text = row.textContent.toLowerCase();
+        if (text.includes(q)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
 </script>

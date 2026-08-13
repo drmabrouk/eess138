@@ -338,8 +338,165 @@ function deleteGrade(gradeId) {
     .then(res => {
         if (res.success) {
             smShowNotification('تم حذف الدرجة');
-            loadStudentGrades(document.getElementById('grade-student-id').value);
+            if (document.getElementById('grade-student-id').value) {
+                loadStudentGrades(document.getElementById('grade-student-id').value);
+            } else {
+                location.reload();
+            }
+        }
+    });
+}
+
+function saveStudentGradeModal() {
+    const studentId = document.getElementById('modal-grade-student-id').value;
+    const subject = document.getElementById('modal-grade-subject').value;
+    const term = document.getElementById('modal-grade-term').value;
+    const gradeVal = document.getElementById('modal-grade-val').value;
+
+    if (!studentId || !subject || !gradeVal) {
+        alert('يرجى إكمال كافة الحقول');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'sm_save_grade_ajax');
+    formData.append('student_id', studentId);
+    formData.append('subject', subject);
+    formData.append('term', term);
+    formData.append('grade_val', gradeVal);
+    formData.append('nonce', '<?php echo wp_create_nonce("sm_grade_action"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            smShowNotification('تم رصد الدرجة بنجاح');
+            document.getElementById('add-grade-modal').style.display = 'none';
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            alert('فشل في رصد الدرجة: ' + res.data);
+        }
+    });
+}
+
+// Global parsed grades container
+let eessParsedGrades = [];
+
+document.getElementById('eess-grades-file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const text = evt.target.result;
+        const lines = text.split('\n');
+        if (lines.length < 2) {
+            alert('الملف فارغ أو غير صالح.');
+            return;
+        }
+
+        // Parse CSV columns intelligently
+        const headers = lines[0].split(',').map(h => h.trim().replace(/[\r\n"']/g, ''));
+        let col_code = -1, col_subject = -1, col_term = -1, col_grade = -1;
+
+        // Auto map columns
+        headers.forEach((h, idx) => {
+            const h_norm = h.toLowerCase();
+            if (h_norm.includes('كود') || h_norm.includes('رقم') || h_norm.includes('code') || h_norm.includes('طالب')) col_code = idx;
+            else if (h_norm.includes('مادة') || h_norm.includes('subject')) col_subject = idx;
+            else if (h_norm.includes('فصل') || h_norm.includes('term')) col_term = idx;
+            else if (h_norm.includes('درجة') || h_norm.includes('grade') || h_norm.includes('val')) col_grade = idx;
+        });
+
+        // Fallback default mapping
+        if (col_code === -1) col_code = 0;
+        if (col_subject === -1) col_subject = 1;
+        if (col_term === -1) col_term = 2;
+        if (col_grade === -1) col_grade = 3;
+
+        eessParsedGrades = [];
+        const tbody = document.querySelector('#eess-grades-preview-table tbody');
+        tbody.innerHTML = '';
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const cols = line.split(',').map(c => c.trim().replace(/[\r\n"']/g, ''));
+            if (cols.length < 2) continue;
+
+            const code = cols[col_code] || '';
+            const subject = cols[col_subject] || '';
+            const term = cols[col_term] || 'الفصل الأول';
+            const grade = cols[col_grade] || '';
+
+            let statusHtml = '<span style="color:green; font-weight:bold;">جاهز للاستيراد</span>';
+            let isValid = true;
+
+            if (!code || !subject || !grade) {
+                statusHtml = '<span style="color:red; font-weight:bold;">بيانات ناقصة</span>';
+                isValid = false;
+            }
+
+            if (isValid) {
+                eessParsedGrades.push({
+                    student_code: code,
+                    subject: subject,
+                    term: term,
+                    grade_val: grade
+                });
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: right; padding-right: 15px; font-weight:bold;">${code}</td>
+                <td>${subject}</td>
+                <td>${term}</td>
+                <td style="font-family:monospace; font-weight:bold; color:var(--sm-primary-color);">${grade}</td>
+                <td>${statusHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById('eess-grades-import-preview-section').style.display = 'block';
+        if (eessParsedGrades.length > 0) {
+            document.getElementById('eess-grades-confirm-import-btn').style.display = 'inline-block';
+        } else {
+            document.getElementById('eess-grades-confirm-import-btn').style.display = 'none';
+        }
+    };
+    reader.readAsText(file);
+});
+
+function eessConfirmGradesImport() {
+    if (eessParsedGrades.length === 0) {
+        alert('لا توجد نتائج صالحة للاستيراد.');
+        return;
+    }
+
+    const btn = document.getElementById('eess-grades-confirm-import-btn');
+    btn.innerText = 'جاري الاستيراد...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('action', 'eess_import_grades_ajax');
+    formData.append('records', JSON.stringify(eessParsedGrades));
+    formData.append('nonce', '<?php echo wp_create_nonce("sm_grade_action"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            smShowNotification('تم استيراد ' + res.data.imported + ' نتيجة أكاديمية بنجاح!');
+            document.getElementById('eess-grades-import-modal').style.display = 'none';
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            alert('خطأ أثناء الاستيراد: ' + res.data);
+            btn.innerText = 'تأكيد واستيراد النتائج';
+            btn.disabled = false;
         }
     });
 }
 </script>
+
+<?php include SM_PLUGIN_DIR . 'templates/partials/grades-modals.php'; ?>

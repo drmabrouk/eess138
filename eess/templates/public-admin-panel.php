@@ -140,6 +140,32 @@
         });
     };
 
+    window.eessToggleUserOptionsDropdown = function(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('eess-user-options-dropdown');
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+
+    window.eessToggleAbsenceDropdown = function(event) {
+        event.stopPropagation();
+        const dropdown = document.getElementById('eess-absence-dropdown');
+        if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+        }
+    };
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function() {
+        const userDropdown = document.getElementById('eess-user-options-dropdown');
+        if (userDropdown) userDropdown.style.display = 'none';
+        const prepDropdown = document.getElementById('eess-prep-reports-dropdown');
+        if (prepDropdown) prepDropdown.style.display = 'none';
+        const absenceDropdown = document.getElementById('eess-absence-dropdown');
+        if (absenceDropdown) absenceDropdown.style.display = 'none';
+    });
+
     window.smOpenViolationModal = function() {
         document.getElementById('sm-global-violation-modal').style.display = 'flex';
     };
@@ -573,8 +599,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     'desc' => 'تسجيل ورصد الحضور والغياب اليومي للطلاب ومتابعة الإحصائيات العامة المعتمدة.',
                     'button' => ''
                 ),
-                'work-profile' => array(
-                    'title' => 'ملف العمل',
+                'employee-profile' => array(
+                    'title' => 'الملف الوظيفي',
                     'desc' => 'الملف المهني والوظيفي المتكامل للموظف ومتابعة السجلات الإدارية والمالية والتقييمات السنوية.',
                     'button' => ''
                 ),
@@ -667,31 +693,58 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 $header_map['teachers']['button'] = '
                 <div style="display: flex; align-items: center; gap: 10px;">
                     ' . ($is_admin ? '<button onclick="document.getElementById(\'add-user-modal\').style.display=\'flex\'" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff; border-radius:8px; font-weight:700; height:38px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> إضافة مستخدم جديد</button>' : '') . '
-                    <button onclick="document.getElementById(\'user-csv-import-box\').style.display = document.getElementById(\'user-csv-import-box\').style.display === \'none\' ? \'block\' : \'none\'" class="sm-btn sm-btn-outline" style="height:38px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; border-radius: 8px;"><span class="dashicons dashicons-upload"></span> استيراد مستخدمين (CSV)</button>
-                    <a href="' . admin_url('admin-ajax.php?action=sm_export_users_csv&nonce=' . wp_create_nonce('eess_admin_action')) . '" class="sm-btn sm-btn-outline" style="height:38px; font-size:12px; text-decoration:none; color:inherit; display:inline-flex; align-items:center; gap:5px; border-radius: 8px;"><span class="dashicons dashicons-download"></span> تصدير مستخدمين (CSV)</a>
+
+                    <!-- User Options Dropdown -->
+                    <div style="position: relative; display: inline-block;">
+                        <button type="button" onclick="eessToggleUserOptionsDropdown(event)" class="sm-btn sm-btn-outline" style="height:38px; display:inline-flex; align-items:center; gap:5px; border-radius: 8px; cursor:pointer; background:#fff; color:#334155; border-color:#cbd5e1;">
+                            <span class="dashicons dashicons-admin-generic" style="font-size: 16px; width: 16px; height: 16px; margin: 0; color: #475569;"></span>
+                            <span>خيارات المستخدمين</span>
+                            <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px; margin: 0;"></span>
+                        </button>
+                        <div id="eess-user-options-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99999; padding: 5px 0; text-align: right;">
+                            <a href="javascript:void(0)" onclick="document.getElementById(\'user-csv-import-box\').style.display = document.getElementById(\'user-csv-import-box\').style.display === \'none\' ? \'block\' : \'none\'; document.getElementById(\'eess-user-options-dropdown\').style.display=\'none\';" style="display: block; padding: 10px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-weight: 700;">📥 استيراد مستخدمين (CSV)</a>
+                            <a href="' . admin_url('admin-ajax.php?action=sm_export_users_csv&nonce=' . wp_create_nonce('eess_admin_action')) . '" onclick="document.getElementById(\'eess-user-options-dropdown\').style.display=\'none\';" style="display: block; padding: 10px 15px; color: #334155; font-size: 12px; text-decoration: none; font-weight: 700;">📤 تصدير مستخدمين (CSV)</a>
+                        </div>
+                    </div>
                 </div>';
             }
             if ($active_tab === 'parents' && ($is_admin || current_user_can('إدارة_أولياء_الأمور'))) {
                 $header_map['parents']['button'] = '<button onclick="document.getElementById(\'add-parent-modal\').style.display=\'flex\'" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff; border-radius:8px; font-weight:700; height:38px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> إضافة ولي أمر جديد</button>';
             }
             if ($active_tab === 'grades' && ($is_admin || $is_coordinator || $is_teacher)) {
-                $header_map['grades']['button'] = '<button onclick="document.getElementById(\'add-grade-modal\').style.display=\'flex\'" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff; border-radius:8px; font-weight:700; height:38px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> إضافة نتيجة أكاديمية</button>';
+                $header_map['grades']['button'] = '
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button onclick="document.getElementById(\'add-grade-modal\').style.display=\'flex\'" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff; border-radius:8px; font-weight:700; height:38px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> إضافة نتيجة أكاديمية</button>
+                    <button onclick="document.getElementById(\'eess-grades-import-modal\').style.display=\'flex\'" class="sm-btn sm-btn-outline" style="height:38px; font-size:12px; cursor:pointer; display:inline-flex; align-items:center; gap:5px; border-radius: 8px;"><span class="dashicons dashicons-upload"></span> استيراد النتائج</button>
+                </div>';
             }
             if ($active_tab === 'attendance') {
                 $att_date = isset($_GET['attendance_date']) ? sanitize_text_field($_GET['attendance_date']) : current_time('Y-m-d');
                 $header_map['attendance']['button'] = '
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;">
                     <a href="' . home_url('/attendance/') . '" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff !important; border-radius:8px; font-weight:700; height:38px; text-decoration:none; display:inline-flex; align-items:center; gap:8px;"><span class="dashicons dashicons-edit"></span> تسجيل الحضور</a>
-                    <button onclick="printAbsenceReport(\'daily\')" class="sm-btn sm-btn-outline" style="height:38px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; border-radius: 8px;"><span class="dashicons dashicons-printer"></span> غيابات اليوم</button>
-                    <button onclick="printAbsenceReport(\'term\')" class="sm-btn sm-btn-outline" style="height:38px; display:inline-flex; align-items:center; gap:5px; cursor:pointer; border-radius: 8px;"><span class="dashicons dashicons-chart-bar"></span> الأكثر غياباً (الفصل)</button>
+
+                    <!-- Absence Reports Dropdown -->
+                    <div style="position: relative; display: inline-block;">
+                        <button type="button" onclick="eessToggleAbsenceDropdown(event)" class="sm-btn sm-btn-outline" style="height:38px; display:inline-flex; align-items:center; gap:5px; border-radius: 8px; cursor:pointer; background:#fff; color:#334155; border-color:#cbd5e1;">
+                            <span class="dashicons dashicons-analytics" style="font-size: 16px; width: 16px; height: 16px; margin: 0; color: #475569;"></span>
+                            <span>سجل الغيابات</span>
+                            <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px; margin: 0;"></span>
+                        </button>
+                        <div id="eess-absence-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99999; padding: 5px 0; text-align: right;">
+                            <a href="javascript:void(0)" onclick="printAbsenceReport(\'daily\'); document.getElementById(\'eess-absence-dropdown\').style.display=\'none\';" style="display: block; padding: 10px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9; font-weight: 700;">📊 غيابات اليوم</a>
+                            <a href="javascript:void(0)" onclick="printAbsenceReport(\'term\'); document.getElementById(\'eess-absence-dropdown\').style.display=\'none\';" style="display: block; padding: 10px 15px; color: #334155; font-size: 12px; text-decoration: none; font-weight: 700;">📈 الأكثر غياباً (الفصل)</a>
+                        </div>
+                    </div>
+
                     <div class="sm-form-group" style="margin-bottom: 0; display:inline-block;">
                         <input type="date" id="attendance-filter-date" class="sm-input" value="' . esc_attr($att_date) . '" onchange="window.location.href=\'' . add_query_arg('attendance_date', '', $_SERVER['REQUEST_URI']) . '\' + this.value" style="height:38px; border-radius: 8px; padding:0 8px; font-family:\'Cairo\';">
                     </div>
                     <button onclick="location.reload()" class="sm-btn sm-btn-outline" title="تحديث" style="height:38px; border-radius: 8px; display:inline-flex; align-items:center; justify-content:center; width:38px; min-width:38px; padding:0; cursor:pointer;"><span class="dashicons dashicons-update" style="margin:0;"></span></button>
                 </div>';
             }
-            if ($active_tab === 'work-profile') {
-                $header_map['work-profile']['button'] = '<button type="button" onclick="eessOpenProfileEditModal()" class="sm-btn" style="background: #000; border: 1px solid #000; color: #fff; border-radius: 8px; font-weight: 700; height: 38px; display: inline-flex; align-items: center; gap: 8px; cursor:pointer;"><span class="dashicons dashicons-edit"></span> تعديل وتزامن البيانات</button>';
+            if ($active_tab === 'employee-profile') {
+                $header_map['employee-profile']['button'] = '<button type="button" onclick="eessOpenProfileEditModal()" class="sm-btn" style="background: #000; border: 1px solid #000; color: #fff; border-radius: 8px; font-weight: 700; height: 38px; display: inline-flex; align-items: center; gap: 8px; cursor:pointer;"><span class="dashicons dashicons-edit"></span> تعديل وتزامن البيانات</button>';
             }
             if ($active_tab === 'hr-evaluation') {
                 $header_map['hr-evaluation']['button'] = '<button onclick="jQuery(\'#eess-new-eval-container\').slideToggle();" class="sm-btn" style="background: #000; border: 1px solid #000; color: #fff; border-radius: 8px; font-weight: 700; height: 38px; display: inline-flex; align-items: center; gap: 8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> إجراء تقييم جديد</button>';
@@ -839,8 +892,8 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
 
 
-                case 'work-profile':
-                    include SM_PLUGIN_DIR . 'templates/admin-work-profile.php';
+                case 'employee-profile':
+                    include SM_PLUGIN_DIR . 'templates/admin-employee-profile.php';
                     break;
 
                 case 'hr-management':
@@ -876,9 +929,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                         ?>
                         <div id="school-structure" class="sm-internal-tab" style="display:block;">
                             <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 10px; overflow-x: auto;">
-                                <button class="eess-org-sub-tab-btn sm-tab-btn sm-active" onclick="eessOpenOrgSubTab('eess-org-tree-tab', this)">🏫 الهيكل التعليمي والأكاديمي</button>
-                                <button class="eess-org-sub-tab-btn sm-tab-btn" onclick="eessOpenOrgSubTab('eess-org-assignments-tab', this)">👤 التكليفات والتعيينات</button>
-                                <button class="eess-org-sub-tab-btn sm-tab-btn" onclick="eessOpenOrgSubTab('eess-org-import-tab', this)">📥 استيراد البيانات المؤسسية</button>
+                                <button class="eess-org-sub-tab-btn sm-tab-btn sm-active" onclick="eessOpenOrgSubTab('eess-org-tree-tab', this)">الهيكل التعليمي والأكاديمي</button>
+                                <button class="eess-org-sub-tab-btn sm-tab-btn" onclick="eessOpenOrgSubTab('eess-org-assignments-tab', this)">التكليفات والتعيينات</button>
+                                <button class="eess-org-sub-tab-btn sm-tab-btn" onclick="eessOpenOrgSubTab('eess-org-import-tab', this)">استيراد البيانات المؤسسية</button>
                             </div>
 
                             <script>
@@ -902,7 +955,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                     <!-- List Area -->
                                     <div style="background: #fff; padding: 20px; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                        <h4 style="margin: 0 0 15px 0; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">📋 الهيكل الحالي</h4>
+                                        <h4 style="margin: 0 0 15px 0; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">الهيكل الحالي</h4>
                                         <div style="max-height: 500px; overflow-y: auto;">
                                             <?php if (empty($institutions)): ?>
                                                 <p style="color: #64748b; text-align: center;">الهيكل فارغ حالياً.</p>
@@ -1081,23 +1134,27 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                                 </select>
                                             </div>
 
-                                            <div class="sm-form-group">
-                                                <label class="sm-label">تعيين الصفوف الدراسية (متعدد):</label>
-                                                <select name="assign_grade_id[]" class="sm-select" multiple style="height: 100px;">
-                                                    <?php foreach ($grades as $gr): ?>
-                                                        <option value="<?php echo $gr->id; ?>"><?php echo esc_html($gr->name); ?> (<?php echo esc_html($gr->school_name ?? ''); ?>)</option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
+                                            <?php if (!empty($grades)): ?>
+                                                <div class="sm-form-group">
+                                                    <label class="sm-label">تعيين الصفوف الدراسية (متعدد):</label>
+                                                    <select name="assign_grade_id[]" class="sm-select" multiple style="height: 100px;">
+                                                        <?php foreach ($grades as $gr): ?>
+                                                            <option value="<?php echo $gr->id; ?>"><?php echo esc_html($gr->name); ?> (<?php echo esc_html($gr->school_name ?? ''); ?>)</option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            <?php endif; ?>
 
-                                            <div class="sm-form-group" style="grid-column: span 2;">
-                                                <label class="sm-label">تعيين الشعب والفصول التابعة (متعدد):</label>
-                                                <select name="assign_class_id[]" class="sm-select" multiple style="height: 120px;">
-                                                    <?php foreach ($classes as $cl): ?>
-                                                        <option value="<?php echo $cl->id; ?>">شعبة <?php echo esc_html($cl->name); ?> - <?php echo esc_html($cl->grade_name ?? ''); ?> (<?php echo esc_html($cl->school_name ?? ''); ?>)</option>
-                                                    <?php endforeach; ?>
-                                                </select>
-                                            </div>
+                                            <?php if (!empty($classes)): ?>
+                                                <div class="sm-form-group" style="grid-column: span 2;">
+                                                    <label class="sm-label">تعيين الشعب والفصول التابعة (متعدد):</label>
+                                                    <select name="assign_class_id[]" class="sm-select" multiple style="height: 120px;">
+                                                        <?php foreach ($classes as $cl): ?>
+                                                            <option value="<?php echo $cl->id; ?>">شعبة <?php echo esc_html($cl->name); ?> - <?php echo esc_html($cl->grade_name ?? ''); ?> (<?php echo esc_html($cl->school_name ?? ''); ?>)</option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            <?php endif; ?>
                                         </div>
 
                                         <button type="submit" class="sm-btn" style="margin-top: 15px;">حفظ وتثبيت التكليف الإداري</button>

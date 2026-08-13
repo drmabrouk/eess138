@@ -417,6 +417,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eess_hr_action']) && 
     }
 }
 
+// Handle pending profile photo approvals/rejections
+if (isset($_POST['eess_photo_approval_action']) && ($is_admin || $is_sys_admin || $is_hr)) {
+    if (wp_verify_nonce($_POST['eess_photo_approval_nonce'], 'eess_photo_approval')) {
+        $approve_emp_id = intval($_POST['approve_emp_id']);
+        $decision = sanitize_text_field($_POST['decision']); // approve or reject
+
+        if ($decision === 'approve') {
+            $pending_photo = get_user_meta($approve_emp_id, 'eess_pending_profile_photo', true);
+            if ($pending_photo) {
+                update_user_meta($approve_emp_id, 'eess_profile_photo', $pending_photo);
+                delete_user_meta($approve_emp_id, 'eess_pending_profile_photo');
+                $status_message = "✅ تم قبول واعتماد الصورة الشخصية الجديدة للموظف بنجاح.";
+            }
+        } elseif ($decision === 'reject') {
+            delete_user_meta($approve_emp_id, 'eess_pending_profile_photo');
+            $status_message = "❌ تم رفض الصورة الشخصية الجديدة وإلغاء طلب المراجعة.";
+        }
+
+        clean_user_cache($approve_emp_id);
+        wp_cache_flush();
+    }
+}
+
 // Fetch list of employees (all users except students/parents)
 $employees = get_users();
 $employees = array_filter($employees, function($u) {
@@ -437,6 +460,106 @@ if (isset($_GET['manage_employee_id'])) {
     <?php if (!empty($status_message)): ?>
         <div class="updated" style="background:#def7ec; color:#03543f; padding:15px; border-radius:8px; border:1px solid #bcf0da; margin-bottom:20px; font-weight:700; font-size: 13px;">
             <?php echo esc_html($status_message); ?>
+        </div>
+    <?php endif; ?>
+
+    <!-- Pending Profile Photo Approvals Section -->
+    <?php
+    $pending_photo_employees = array_filter($employees, function($u) {
+        return !empty(get_user_meta($u->ID, 'eess_pending_profile_photo', true));
+    });
+    if (!empty($pending_photo_employees) && !$edit_emp):
+    ?>
+        <div style="background: #fffbeb; border: 1px solid #fef3c7; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: var(--sm-shadow);">
+            <h3 style="margin: 0 0 15px 0; font-weight: 800; color: #b45309; font-size: 14px; border-bottom: 1.5px dashed #fef3c7; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <span class="dashicons dashicons-format-image" style="color: #b45309;"></span>
+                <span>طلبات الصور الشخصية المعلقة بانتظار الاعتماد (HR)</span>
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <?php foreach ($pending_photo_employees as $pe):
+                    $pending_url = get_user_meta($pe->ID, 'eess_pending_profile_photo', true);
+                    $current_avatar = get_user_meta($pe->ID, 'eess_profile_photo', true);
+                ?>
+                    <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 20px; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 4px;">الصورة الحالية</div>
+                                <?php if ($current_avatar): ?>
+                                    <img src="<?php echo esc_url($current_avatar); ?>" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #cbd5e1;">
+                                <?php else: ?>
+                                    <div style="width: 50px; height: 50px; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; border: 2px solid #cbd5e1;"><span class="dashicons dashicons-admin-users"></span></div>
+                                <?php endif; ?>
+                            </div>
+                            <div style="font-size: 20px; color: #94a3b8;">➡️</div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 10px; color: #b45309; font-weight: bold; margin-bottom: 4px;">الصورة الجديدة</div>
+                                <img src="<?php echo esc_url($pending_url); ?>" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #b45309; box-shadow: 0 0 8px rgba(180, 83, 9, 0.2);">
+                            </div>
+                            <div style="margin-right: 15px; text-align: right;">
+                                <strong style="font-size: 13px; color: #1e293b; display: block;"><?php echo esc_html($pe->display_name); ?></strong>
+                                <span style="font-size: 11px; color: #64748b;"><?php echo esc_html($pe->user_email); ?></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <form method="POST" action="" style="margin: 0;">
+                                <?php wp_nonce_field('eess_photo_approval', 'eess_photo_approval_nonce'); ?>
+                                <input type="hidden" name="eess_photo_approval_action" value="1">
+                                <input type="hidden" name="approve_emp_id" value="<?php echo $pe->ID; ?>">
+                                <input type="hidden" name="decision" value="approve">
+                                <button type="submit" class="sm-btn" style="background: #15803d; border-color: #15803d; font-size: 12px; height: 32px; padding: 0 15px; color: white !important; font-family: 'Cairo'; font-weight: bold; cursor: pointer;">✔️ قبول واعتماد</button>
+                            </form>
+                            <form method="POST" action="" style="margin: 0;">
+                                <?php wp_nonce_field('eess_photo_approval', 'eess_photo_approval_nonce'); ?>
+                                <input type="hidden" name="eess_photo_approval_action" value="1">
+                                <input type="hidden" name="approve_emp_id" value="<?php echo $pe->ID; ?>">
+                                <input type="hidden" name="decision" value="reject">
+                                <button type="submit" class="sm-btn" style="background: #b91c1c; border-color: #b91c1c; font-size: 12px; height: 32px; padding: 0 15px; color: white !important; font-family: 'Cairo'; font-weight: bold; cursor: pointer;">❌ رفض الطلب</button>
+                            </form>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Bulk Employee Import Panel -->
+    <?php if (!$edit_emp): ?>
+        <div id="hr-employee-import-box" style="display: none; background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; margin-bottom: 25px; box-shadow: var(--sm-shadow); text-align: right; font-family: 'Cairo', sans-serif;">
+            <h3 style="margin: 0 0 15px 0; font-weight: 800; color: #1e293b; font-size: 14px; border-bottom: 1.5px dashed #e2e8f0; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <span class="dashicons dashicons-upload" style="color: var(--sm-primary-color);"></span>
+                <span>استيراد الموظفين المعتمدين والمزامنة الفورية (CSV)</span>
+            </h3>
+            <p style="font-size: 12px; color: #475569; margin-top:0;">يرجى اختيار ملف CSV يحتوي على سجلات الموظفين لمطابقتها واستيرادها مباشرة إلى النظام والأنظمة المرتبطة.</p>
+
+            <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                <label style="display: block; font-weight: bold; font-size: 12px; color: #1e293b; margin-bottom: 8px;">اختر ملف الموظفين (CSV):</label>
+                <input type="file" id="eess-employees-file-input" accept=".csv" style="display: block; font-size: 13px; font-family:'Cairo';">
+            </div>
+
+            <!-- Preview Table -->
+            <div id="eess-employees-import-preview-section" style="display: none;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 800; color: #1e293b;">📊 معاينة الموظفين والمطابقة الذكية</h4>
+                <div style="max-height: 250px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 20px;">
+                    <table class="sm-table" style="margin: 0; width: 100%;" id="eess-employees-preview-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: right; padding-right: 15px;">الاسم الكامل</th>
+                                <th>البريد الإلكتروني</th>
+                                <th>الرقم الوظيفي</th>
+                                <th>القسم</th>
+                                <th>الدور / الرتبة</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button type="button" onclick="document.getElementById('hr-employee-import-box').style.display='none'" class="sm-btn sm-btn-outline" style="background:#f1f5f9; color:#475569; border-color:#cbd5e1; border-radius:8px; height:38px; cursor:pointer;">إلغاء</button>
+                <button type="button" id="eess-employees-confirm-import-btn" class="sm-btn" style="height: 38px; background: #15803d; border-color:#15803d; color:white !important; border-radius:8px; display: none; cursor:pointer;" onclick="eessConfirmEmployeesImport()">بدء الاستيراد الفوري</button>
+            </div>
         </div>
     <?php endif; ?>
 
@@ -1020,6 +1143,147 @@ function eessCloseUnrestrictModal() {
         </form>
     </div>
 </div>
+
+<script>
+let eessParsedEmployees = [];
+
+document.getElementById('eess-employees-file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const text = evt.target.result;
+        const lines = text.split('\n');
+        if (lines.length < 2) {
+            alert('الملف فارغ أو غير صالح.');
+            return;
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().replace(/[\r\n"']/g, ''));
+        let col_name = -1, col_email = -1, col_emp_num = -1, col_dept = -1, col_spec = -1, col_phone = -1, col_role = -1, col_school = -1;
+
+        headers.forEach((h, idx) => {
+            const h_norm = h.toLowerCase();
+            if (h_norm.includes('اسم') || h_norm.includes('name')) col_name = idx;
+            else if (h_norm.includes('بريد') || h_norm.includes('email')) col_email = idx;
+            else if (h_norm.includes('موظف') || h_norm.includes('number') || h_norm.includes('emp_num')) col_emp_num = idx;
+            else if (h_norm.includes('قسم') || h_norm.includes('dept')) col_dept = idx;
+            else if (h_norm.includes('تخصص') || h_norm.includes('subject') || h_norm.includes('spec')) col_spec = idx;
+            else if (h_norm.includes('هاتف') || h_norm.includes('phone') || h_norm.includes('جوال')) col_phone = idx;
+            else if (h_norm.includes('دور') || h_norm.includes('رتبة') || h_norm.includes('role')) col_role = idx;
+            else if (h_norm.includes('مدرسة') || h_norm.includes('school')) col_school = idx;
+        });
+
+        // Fallbacks
+        if (col_name === -1) col_name = 0;
+        if (col_email === -1) col_email = 1;
+        if (col_emp_num === -1) col_emp_num = 2;
+        if (col_dept === -1) col_dept = 3;
+        if (col_spec === -1) col_spec = 4;
+        if (col_phone === -1) col_phone = 5;
+        if (col_role === -1) col_role = 6;
+        if (col_school === -1) col_school = 7;
+
+        eessParsedEmployees = [];
+        const tbody = document.querySelector('#eess-employees-preview-table tbody');
+        tbody.innerHTML = '';
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const cols = line.split(',').map(c => c.trim().replace(/[\r\n"']/g, ''));
+            if (cols.length < 2) continue;
+
+            const name = cols[col_name] || '';
+            const email = cols[col_email] || '';
+            const emp_num = cols[col_emp_num] || '';
+            const dept = cols[col_dept] || 'التعليم العام';
+            const spec = cols[col_spec] || '';
+            const phone = cols[col_phone] || '';
+            let role = cols[col_role] || 'sm_teacher';
+            const school = cols[col_school] || 'خدمات الأنظمة الإلكترونية التعليمية (EESS)';
+
+            // Normalize roles if Arabic
+            if (role.includes('معلم')) role = 'sm_teacher';
+            else if (role.includes('مشرف')) role = 'sm_supervisor';
+            else if (role.includes('منسق')) role = 'sm_coordinator';
+            else if (role.includes('موارد')) role = 'sm_hr';
+
+            let statusHtml = '<span style="color:green; font-weight:bold;">جاهز للاستيراد</span>';
+            let isValid = true;
+
+            if (!name || !email) {
+                statusHtml = '<span style="color:red; font-weight:bold;">بيانات أساسية ناقصة</span>';
+                isValid = false;
+            }
+
+            if (isValid) {
+                eessParsedEmployees.push({
+                    name: name,
+                    email: email,
+                    emp_num: emp_num,
+                    dept: dept,
+                    specialization: spec,
+                    phone: phone,
+                    role: role,
+                    school: school
+                });
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="text-align: right; padding-right: 15px; font-weight:bold;">${name}</td>
+                <td>${email}</td>
+                <td>${emp_num}</td>
+                <td>${dept}</td>
+                <td>${role}</td>
+                <td>${statusHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        document.getElementById('eess-employees-import-preview-section').style.display = 'block';
+        if (eessParsedEmployees.length > 0) {
+            document.getElementById('eess-employees-confirm-import-btn').style.display = 'inline-block';
+        } else {
+            document.getElementById('eess-employees-confirm-import-btn').style.display = 'none';
+        }
+    };
+    reader.readAsText(file);
+});
+
+function eessConfirmEmployeesImport() {
+    if (eessParsedEmployees.length === 0) {
+        alert('لا توجد سجلات موظفين صالحة للاستيراد.');
+        return;
+    }
+
+    const btn = document.getElementById('eess-employees-confirm-import-btn');
+    btn.innerText = 'جاري استيراد الموظفين...';
+    btn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('action', 'eess_bulk_import_employees_ajax');
+    formData.append('records', JSON.stringify(eessParsedEmployees));
+    formData.append('nonce', '<?php echo wp_create_nonce("eess_hr_add_employee_nonce"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            smShowNotification('تم استيراد ' + res.data.imported + ' موظف ومزامنتهم بنجاح!');
+            document.getElementById('hr-employee-import-box').style.display = 'none';
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            alert('خطأ أثناء الاستيراد: ' + res.data);
+            btn.innerText = 'بدء الاستيراد الفوري';
+            btn.disabled = false;
+        }
+    });
+}
+</script>
 
 <!-- Platform Unrestriction Confirmation Modal -->
 <div id="eessUnrestrictModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(2px); direction: rtl;">

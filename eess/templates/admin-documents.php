@@ -1,9 +1,9 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 <div class="sm-content-wrapper" dir="rtl">
     <div class="sm-tabs-wrapper" style="display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-        <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('doc-library-tab', this)">📂 مكتبة الوثائق والتقارير</button>
+        <button class="sm-tab-btn sm-active" onclick="smOpenInternalTab('doc-library-tab', this)">مكتبة الوثائق والتقارير</button>
         <?php if (current_user_can('تسجيل_مخالفة')): // Supervisors and above ?>
-            <button class="sm-tab-btn" onclick="smOpenInternalTab('regulation-custom-tab', this)">📜 تخصيص اللائحة التنظيمية</button>
+            <button class="sm-tab-btn" onclick="smOpenInternalTab('regulation-custom-tab', this)">تخصيص اللائحة التنظيمية</button>
         <?php endif; ?>
     </div>
 
