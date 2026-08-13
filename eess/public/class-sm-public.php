@@ -391,7 +391,7 @@ class SM_Public {
         /* Official Website Badge */
         .eess-official-badge-container {
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             margin-bottom: 20px;
         }
         .eess-official-badge {
@@ -507,6 +507,8 @@ class SM_Public {
             margin-top: auto;
             position: relative;
             z-index: 2;
+            direction: rtl !important;
+            text-align: right !important;
         }
         .eess-about-title {
             font-size: 0.95rem;
@@ -813,6 +815,9 @@ class SM_Public {
                 display: none;
             }
         }
+        .eess-modal-overlay, .eess-modal-overlay * {
+            font-family: \'Cairo\', \'Noto Kufi Arabic\', sans-serif !important;
+        }
         </style>
 
         <div class="eess-login-page-container">
@@ -839,11 +844,10 @@ class SM_Public {
                                 <input type="text" name="log" id="user_login" class="eess-form-input" placeholder="name@company.com" required>
                             </div>
 
-                            <!-- Password field with lost-password link inline -->
+                            <!-- Password field -->
                             <div class="eess-form-group">
                                 <div class="eess-field-label-wrapper" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                                     <label for="user_pass" class="eess-field-label" style="margin: 0;">كلمة المرور <span style="color:#ef4444;">*</span></label>
-                                    <a href="' . esc_url(wp_lostpassword_url(home_url('/sm-login'))) . '" class="eess-lost-pwd-link">نسيت كلمة المرور؟</a>
                                 </div>
                                 <input type="password" name="pwd" id="user_pass" class="eess-form-input" placeholder="••••••" required style="margin-top: 5px;">
                             </div>
@@ -877,10 +881,10 @@ class SM_Public {
                             <p class="eess-reset-card-desc" style="margin-bottom: 12px; font-size: 12px; color: #64748b;">أختر إحدى الخدمات التالية لاستعادة كلمة المرور أو البدء في تسجيل حساب جديد بالمنصة:</p>
                             <div style="display: flex; gap: 10px;">
                                 <button type="button" onclick="eessOpenForgotModal()" class="eess-btn-reset-pwd" style="flex: 1; font-size: 11px; height: 36px; background-color: #8b1e1e !important;">
-                                    🔑 استعادة كلمة المرور
+                                    استعادة كلمة المرور
                                 </button>
                                 <button type="button" onclick="eessOpenRegisterModal()" class="eess-btn-reset-pwd" style="flex: 1; font-size: 11px; height: 36px; background-color: #000000 !important;">
-                                    👤 تسجيل حساب جديد
+                                    تسجيل حساب جديد
                                 </button>
                             </div>
                         </div>
@@ -923,15 +927,15 @@ class SM_Public {
                     <!-- Branding logo/icon/text -->
                     <div class="eess-branding-header">
                         <div class="eess-branding-logo-box">
-                            <div class="eess-logo-text-col">
-                                <span class="eess-logo-title">EESS</span>
-                                <span class="eess-logo-subtitle">Educational Electronic Systems Services</span>
-                            </div>
                             <div class="eess-logo-icon-col">
                                 <svg class="mortarboard-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>
                                     <path d="M5 13.18v4c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-4l-7 3.82-7-3.82z"/>
                                 </svg>
+                            </div>
+                            <div class="eess-logo-text-col">
+                                <span class="eess-logo-title">EESS</span>
+                                <span class="eess-logo-subtitle">Educational Electronic Systems Services</span>
                             </div>
                         </div>
                         <div class="eess-branding-divider"></div>
@@ -1046,9 +1050,19 @@ class SM_Public {
 
                     <div id="eess-register-msg" class="eess-modal-msg"></div>
 
-                    <!-- Step 1: Email Address -->
+                    <!-- Step 1: First Name, Last Name, and Email Address -->
                     <div id="eess-reg-step-1" class="eess-wizard-step active">
-                        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.6;">يرجى البدء بإدخال بريدك الإلكتروني المعتمد بالمنصة للتحقق منه وإكمال بقية خطوات التسجيل.</p>
+                        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.6;">يرجى البدء بإدخال اسمك الأول واسم العائلة، بالإضافة لبريدك الإلكتروني المعتمد بالمنصة للتحقق منه وإكمال خطوات التسجيل.</p>
+                        <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                            <div class="eess-form-group" style="flex: 1; margin-bottom: 0;">
+                                <label class="eess-field-label">الاسم الأول <span style="color:#ef4444;">*</span></label>
+                                <input type="text" id="eess-reg-first-name" class="eess-form-input" placeholder="الاسم الأول">
+                            </div>
+                            <div class="eess-form-group" style="flex: 1; margin-bottom: 0;">
+                                <label class="eess-field-label">اسم العائلة <span style="color:#ef4444;">*</span></label>
+                                <input type="text" id="eess-reg-last-name" class="eess-form-input" placeholder="اسم العائلة">
+                            </div>
+                        </div>
                         <div class="eess-form-group">
                             <label class="eess-field-label">البريد الإلكتروني الرسمي <span style="color:#ef4444;">*</span></label>
                             <input type="email" id="eess-reg-email" class="eess-form-input" placeholder="name@company.com">
@@ -1280,7 +1294,14 @@ class SM_Public {
         }
 
         function eessRegisterStep1Next() {
-            const email = document.getElementById(\'eess-reg-email\').value;
+            const firstName = document.getElementById(\'eess-reg-first-name\').value.trim();
+            const lastName = document.getElementById(\'eess-reg-last-name\').value.trim();
+            const email = document.getElementById(\'eess-reg-email\').value.trim();
+
+            if (!firstName || !lastName) {
+                eessShowRegMsg(\'يرجى إدخال الاسم الأول واسم العائلة.\', true);
+                return;
+            }
             if (!email) {
                 eessShowRegMsg(\'يرجى إدخال البريد الإلكتروني.\', true);
                 return;
@@ -1325,6 +1346,8 @@ class SM_Public {
         }
 
         function eessRegisterSubmitFinal() {
+            const firstName = document.getElementById(\'eess-reg-first-name\').value.trim();
+            const lastName = document.getElementById(\'eess-reg-last-name\').value.trim();
             const email = document.getElementById(\'eess-reg-email\').value;
             const empNum = document.getElementById(\'eess-reg-emp-num\').value;
             const pass = document.getElementById(\'eess-reg-pass\').value;
@@ -1340,6 +1363,8 @@ class SM_Public {
 
             const data = new FormData();
             data.append(\'action\', \'eess_register_submit\');
+            data.append(\'first_name\', firstName);
+            data.append(\'last_name\', lastName);
             data.append(\'email\', email);
             data.append(\'emp_num\', empNum);
             data.append(\'password\', pass);
@@ -4217,8 +4242,10 @@ class SM_Public {
         $role = isset($_POST['role']) ? sanitize_text_field($_POST['role']) : '';
         $school = isset($_POST['school']) ? sanitize_text_field($_POST['school']) : '';
         $otp = isset($_POST['otp']) ? sanitize_text_field($_POST['otp']) : '';
+        $first_name = isset($_POST['first_name']) ? sanitize_text_field($_POST['first_name']) : '';
+        $last_name = isset($_POST['last_name']) ? sanitize_text_field($_POST['last_name']) : '';
 
-        if (empty($email) || empty($emp_num) || empty($password) || empty($password_conf) || empty($role) || empty($otp)) {
+        if (empty($email) || empty($emp_num) || empty($password) || empty($password_conf) || empty($role) || empty($otp) || empty($first_name) || empty($last_name)) {
             wp_send_json_error('جميع الحقول إلزامية لإكمال عملية التسجيل.');
         }
 
@@ -4237,11 +4264,19 @@ class SM_Public {
             $username .= rand(0, 9);
         }
 
+        $display_name = trim($first_name . ' ' . $last_name);
+        if (empty($display_name)) {
+            $display_name = $username;
+        }
+
         $user_id = wp_insert_user(array(
             'user_login' => $username,
             'user_email' => $email,
             'user_pass'  => $password,
-            'role'       => $role
+            'role'       => $role,
+            'first_name' => $first_name,
+            'last_name'  => $last_name,
+            'display_name'=> $display_name
         ));
 
         if (is_wp_error($user_id)) {
@@ -4252,6 +4287,8 @@ class SM_Public {
         update_user_meta($user_id, 'eess_approval_status', 'pending');
         update_user_meta($user_id, 'eess_employee_number', $emp_num);
         update_user_meta($user_id, 'eess_school_name', $school);
+        update_user_meta($user_id, 'first_name', $first_name);
+        update_user_meta($user_id, 'last_name', $last_name);
 
         delete_transient('eess_register_otp_' . md5($email));
 
@@ -4262,6 +4299,7 @@ class SM_Public {
         <p>مرحباً بقسم إدارة المستخدمين،</p>
         <p>تم استلام طلب تسجيل حساب جديد بالمنصة وينتظر المراجعة والاعتماد.</p>
         <div style="background: #f8fafc; padding: 15px; border-radius: 6px; border:1px solid #e2e8f0; line-height: 1.8;">
+            <strong>الاسم الكامل:</strong> ' . esc_html($display_name) . '<br>
             <strong>البريد الإلكتروني:</strong> ' . esc_html($email) . '<br>
             <strong>رقم الموظف:</strong> ' . esc_html($emp_num) . '<br>
             <strong>الرتبة / المسمى الوظيفي:</strong> ' . esc_html($role) . '<br>
