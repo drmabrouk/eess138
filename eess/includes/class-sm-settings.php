@@ -442,10 +442,10 @@ class SM_Settings {
                     'sm_hr' => false,
                 )
             ),
-            'work-profile' => array(
-                'label' => 'ملف العمل',
+            'employee-profile' => array(
+                'label' => 'الملف الوظيفي',
                 'dashicon' => 'dashicons-businessman',
-                'tab' => 'work-profile',
+                'tab' => 'employee-profile',
                 'default' => array(
                     'sm_system_admin' => true,
                     'sm_principal' => true,
@@ -656,7 +656,7 @@ class SM_Settings {
                 return ($is_principal || $is_supervisor || $is_coordinator || $is_teacher || $is_student || $is_parent);
             case 'attendance':
                 return ($is_principal || $is_supervisor || $is_teacher);
-            case 'work-profile':
+            case 'employee-profile':
                 return ($is_principal || $is_supervisor || $is_coordinator || $is_teacher || in_array('sm_hr', $roles) || in_array('sm_discipline_supervisor', $roles) || in_array('sm_activities_supervisor', $roles) || in_array('sm_transportation_supervisor', $roles) || in_array('sm_bus_supervisor', $roles) || $is_clinic);
             case 'hr-evaluation':
                 return ($is_principal || $is_supervisor || $is_coordinator || in_array('sm_hr', $roles) || user_can($user_id, 'manage_hr'));
@@ -930,13 +930,13 @@ class SM_Settings {
             update_user_meta($user_id, 'sm_specialization', sanitize_text_field($additional_data['specialization']));
         }
 
-        // 4. In Work Profile and Human Resources, synchronize immediately.
+        // 4. In Employee Profile and Human Resources, synchronize immediately.
         $hr_status = get_user_meta($user_id, 'eess_hr_employment_status', true);
         if (empty($hr_status)) {
             update_user_meta($user_id, 'eess_hr_employment_status', 'active');
         }
 
-        // Add a timeline event to the Work Profile
+        // Add a timeline event to the Employee Profile
         $timeline = get_user_meta($user_id, 'eess_hr_activity_timeline', true) ?: array();
         if (!is_array($timeline)) {
             $timeline = array();

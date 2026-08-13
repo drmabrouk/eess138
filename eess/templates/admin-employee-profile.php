@@ -13,6 +13,26 @@ if (($is_admin || $is_sys_admin || $is_hr) && isset($_GET['employee_id'])) {
     $target_user_id = intval($_GET['employee_id']);
 }
 
+// Handle profile photo upload with HR approval workflow
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_photo_upload'])) {
+    if (isset($_POST['eess_photo_nonce']) && wp_verify_nonce($_POST['eess_photo_nonce'], 'eess_profile_photo_upload')) {
+        if (!empty($_FILES['profile_photo_upload']['name'])) {
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+
+            $attachment_id = media_handle_upload('profile_photo_upload', 0);
+            if (!is_wp_error($attachment_id)) {
+                $photo_url = wp_get_attachment_url($attachment_id);
+                update_user_meta($target_user_id, 'eess_pending_profile_photo', $photo_url);
+                echo '<div style="background:#fffbeb; color:#b45309; padding:15px; border-radius:8px; border:1px solid #fef3c7; font-weight:700; margin-bottom:20px; font-family:\'Cairo\', sans-serif; text-align:right;">⚠️ تم رفع الصورة الشخصية بنجاح وهي معلقة بانتظار موافقة واعتماد قسم الموارد البشرية (HR).</div>';
+            } else {
+                echo '<div style="background:#fee2e2; color:#991b1b; padding:15px; border-radius:8px; border:1px solid #fca5a5; font-weight:700; margin-bottom:20px; font-family:\'Cairo\', sans-serif; text-align:right;">❌ خطأ في رفع الصورة: ' . esc_html($attachment_id->get_error_message()) . '</div>';
+            }
+        }
+    }
+}
+
 $u = get_userdata($target_user_id);
 if (!$u) {
     echo '<div class="error" style="background:#fee2e2; color:#991b1b; padding:15px; border-radius:8px; border:1px solid #fca5a5; font-weight:700; font-family:\'Cairo\', sans-serif;">خطأ: لم يتم العثور على الموظف المطلوب.</div>';
@@ -155,45 +175,6 @@ if (!is_array($timeline)) $timeline = json_decode($timeline, true) ?: array();
 
 <div class="sm-container" style="padding: 10px 0; font-family: 'Cairo', sans-serif !important; direction: rtl;">
 
-    <!-- Employee Overview Top Header -->
-    <div style="background: #fff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: var(--sm-shadow);">
-        <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
-            <div>
-                <?php echo get_avatar($target_user_id, 110, '', '', array('style' => 'width: 110px; height: 110px; border-radius: 50% !important; border: 4px solid #cbd5e1; object-fit: cover; display: block;')); ?>
-            </div>
-
-            <div style="flex: 1; min-width: 280px;">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                    <h2 style="margin: 0; font-weight: 800; color: #1e293b; font-size: 1.6rem;"><?php echo esc_html($u->display_name); ?></h2>
-                    <span style="background: #334155; color: #f8fafc; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">
-                        <?php echo $role_map[$u->roles[0]] ?? $u->roles[0]; ?>
-                    </span>
-                    <?php if ($employment_status === 'active'): ?>
-                        <span style="background: #dcfce7; color: #15803d; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #bbf7d0;">نشط بالخدمة</span>
-                    <?php elseif ($employment_status === 'restricted'): ?>
-                        <span style="background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #fca5a5;">مقيد الدخول للمنصة</span>
-                    <?php else: ?>
-                        <span style="background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #cbd5e1;">غير نشط / إجازة</span>
-                    <?php endif; ?>
-                </div>
-                <p style="margin: 6px 0; font-size: 0.85rem; color: #64748b; font-family: monospace;">@<?php echo esc_html($u->user_login); ?> | <?php echo esc_html($u->user_email); ?></p>
-
-                <div style="display: flex; gap: 15px; margin-top: 12px; flex-wrap: wrap; font-size: 12px;">
-                    <span style="color: #475569;">
-                        <strong>رقم الموظف:</strong> <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;"><?php echo esc_html($emp_num ?: 'غير محدد'); ?></code>
-                    </span>
-                    <span style="color: #475569;">
-                        <strong>القسم:</strong> <?php echo esc_html($dept); ?>
-                    </span>
-                    <span style="color: #475569;">
-                        <strong>المادة/التخصص:</strong> <span style="color: #64748b; font-weight: 700;"><?php echo esc_html($specialization); ?></span>
-                    </span>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
     <!-- Main Workspace with Tabs in Left-Sidebar Vertical Format (RTL compliant) -->
     <div style="background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: var(--sm-shadow); padding: 25px; min-height: 500px; display: flex; gap: 25px; direction: rtl; align-items: flex-start;">
 
@@ -201,6 +182,61 @@ if (!is_array($timeline)) $timeline = json_decode($timeline, true) ?: array();
         <div style="flex: 1; min-width: 0;">
             <!-- Section 1: Personal Information -->
             <div id="wp-personal" class="wp-tab-content" style="display: block;">
+
+                <!-- Employee Overview Top Header (Moved to first tab: Personal Information) -->
+                <div style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: var(--sm-shadow);">
+                    <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+                        <div style="text-align: center;">
+                            <?php
+                            $pending_photo = get_user_meta($target_user_id, 'eess_pending_profile_photo', true);
+                            echo get_avatar($target_user_id, 110, '', '', array('style' => 'width: 110px; height: 110px; border-radius: 50% !important; border: 4px solid #cbd5e1; object-fit: cover; display: block; margin: 0 auto;'));
+                            ?>
+                            <form method="POST" enctype="multipart/form-data" action="" style="margin-top: 10px;">
+                                <?php wp_nonce_field('eess_profile_photo_upload', 'eess_photo_nonce'); ?>
+                                <label class="sm-btn sm-btn-outline" style="font-size: 11px; padding: 4px 10px; cursor: pointer; border-radius: 6px; display: inline-block; background: #fff; border-color: #cbd5e1; font-weight: bold;">
+                                    📁 تغيير الصورة الشخصية
+                                    <input type="file" name="profile_photo_upload" onchange="this.form.submit()" style="display: none;">
+                                </label>
+                            </form>
+                            <?php if ($pending_photo): ?>
+                                <div style="margin-top: 5px; font-size: 10px; color: #d97706; font-weight: bold; background: #fffbeb; border: 1px solid #fef3c7; padding: 4px; border-radius: 4px; text-align: center; max-width: 180px; margin-left: auto; margin-right: auto;">
+                                    ⚠️ الصورة الجديدة قيد الاعتماد من قبل HR
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <div style="flex: 1; min-width: 280px; text-align: right;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <h2 style="margin: 0; font-weight: 800; color: #1e293b; font-size: 1.6rem;"><?php echo esc_html($u->display_name); ?></h2>
+                                <span style="background: #334155; color: #f8fafc; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">
+                                    <?php echo $role_map[$u->roles[0]] ?? $u->roles[0]; ?>
+                                </span>
+                                <?php if ($employment_status === 'active'): ?>
+                                    <span style="background: #dcfce7; color: #15803d; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #bbf7d0;">نشط بالخدمة</span>
+                                <?php elseif ($employment_status === 'restricted'): ?>
+                                    <span style="background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #fca5a5;">مقيد الدخول للمنصة</span>
+                                <?php else: ?>
+                                    <span style="background: #f1f5f9; color: #475569; padding: 2px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #cbd5e1;">غير نشط / إجازة</span>
+                                <?php endif; ?>
+                            </div>
+                            <p style="margin: 6px 0; font-size: 0.85rem; color: #64748b; font-family: monospace;">@<?php echo esc_html($u->user_login); ?> | <?php echo esc_html($u->user_email); ?></p>
+
+                            <div style="display: flex; gap: 15px; margin-top: 12px; flex-wrap: wrap; font-size: 12px;">
+                                <span style="color: #475569;">
+                                    <strong>رقم الموظف:</strong> <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;"><?php echo esc_html($emp_num ?: 'غير محدد'); ?></code>
+                                </span>
+                                <span style="color: #475569;">
+                                    <strong>القسم:</strong> <?php echo esc_html($dept); ?>
+                                </span>
+                                <span style="color: #475569;">
+                                    <strong>المادة/التخصص:</strong> <span style="color: #64748b; font-weight: 700;"><?php echo esc_html($specialization); ?></span>
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
                 <h4 style="margin: 0 0 20px 0; font-weight: 800; color: #1e293b; font-size: 1.1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">البيانات الشخصية وتفاصيل الاتصال</h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px;">
                 <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #f1f5f9;">
@@ -572,17 +608,17 @@ if (!is_array($timeline)) $timeline = json_decode($timeline, true) ?: array();
 
         <!-- Left side: Vertical Sidebar Navigation (width: 250px) -->
         <div style="width: 250px; flex-shrink: 0; border-right: 1px solid #cbd5e0; padding-right: 15px; display: flex; flex-direction: column; gap: 8px;">
-            <button onclick="switchWorkProfileTab('wp-personal', this)" class="sm-tab-btn sm-active" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #334155; color: white;">البيانات الشخصية</button>
-            <button onclick="switchWorkProfileTab('wp-employment', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">بيانات المباشرة</button>
-            <button onclick="switchWorkProfileTab('wp-position', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">تفاصيل المنصب والمهام</button>
-            <button onclick="switchWorkProfileTab('wp-salaries', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">معلومات الرواتب</button>
-            <button onclick="switchWorkProfileTab('wp-disciplinary', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">السجلات التأديبية</button>
-            <button onclick="switchWorkProfileTab('wp-evaluations', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">تقييم الأداء</button>
-            <button onclick="switchWorkProfileTab('wp-docs', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">الوثائق الرسمية</button>
-            <button onclick="switchWorkProfileTab('wp-history', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">السجل المهني</button>
-            <button onclick="switchWorkProfileTab('wp-leaves', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">سجل الإجازات</button>
-            <button onclick="switchWorkProfileTab('wp-notes', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">الملاحظات الإدارية</button>
-            <button onclick="switchWorkProfileTab('wp-timeline', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">سجل الأنشطة</button>
+            <button onclick="switchEmployeeProfileTab('wp-personal', this)" class="sm-tab-btn sm-active" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #334155; color: white;">البيانات الشخصية</button>
+            <button onclick="switchEmployeeProfileTab('wp-employment', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">بيانات المباشرة</button>
+            <button onclick="switchEmployeeProfileTab('wp-position', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">تفاصيل المنصب والمهام</button>
+            <button onclick="switchEmployeeProfileTab('wp-salaries', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">معلومات الرواتب</button>
+            <button onclick="switchEmployeeProfileTab('wp-disciplinary', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">السجلات التأديبية</button>
+            <button onclick="switchEmployeeProfileTab('wp-evaluations', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">تقييم الأداء</button>
+            <button onclick="switchEmployeeProfileTab('wp-docs', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">الوثائق الرسمية</button>
+            <button onclick="switchEmployeeProfileTab('wp-history', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">السجل المهني</button>
+            <button onclick="switchEmployeeProfileTab('wp-leaves', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">سجل الإجازات</button>
+            <button onclick="switchEmployeeProfileTab('wp-notes', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">الملاحظات الإدارية</button>
+            <button onclick="switchEmployeeProfileTab('wp-timeline', this)" class="sm-tab-btn" style="text-align: right; width: 100%; border: none; font-size: 13px; font-weight: 700; padding: 10px 15px; border-radius: 6px; cursor: pointer; transition: 0.2s; background: #f8fafc; color: #475569;">سجل الأنشطة</button>
         </div>
 
     </div>
@@ -680,8 +716,8 @@ if (!is_array($timeline)) $timeline = json_decode($timeline, true) ?: array();
 </div>
 
 <script>
-// Tab Switching logic for 11 distinct sections inside Work Profile
-function switchWorkProfileTab(tabId, btn) {
+// Tab Switching logic for 11 distinct sections inside Employee Profile
+function switchEmployeeProfileTab(tabId, btn) {
     document.querySelectorAll('.wp-tab-content').forEach(el => el.style.display = 'none');
     const tabEl = document.getElementById(tabId);
     if (tabEl) tabEl.style.display = 'block';

@@ -94,6 +94,7 @@ class School_Management {
         $this->loader->add_action('wp_ajax_sm_export_violations_csv', $plugin_public, 'ajax_export_violations_csv');
         $this->loader->add_action('wp_ajax_sm_export_users_csv', $plugin_public, 'ajax_export_users_csv');
         $this->loader->add_action('wp_ajax_sm_save_grade_ajax', $plugin_public, 'ajax_save_grade_ajax');
+        $this->loader->add_action('wp_ajax_eess_import_grades_ajax', $plugin_public, 'ajax_import_grades');
         $this->loader->add_action('wp_ajax_sm_get_student_grades_ajax', $plugin_public, 'ajax_get_student_grades_ajax');
         $this->loader->add_action('wp_ajax_sm_delete_grade_ajax', $plugin_public, 'ajax_delete_grade_ajax');
         $this->loader->add_action('wp_ajax_sm_add_subject', $plugin_public, 'ajax_add_subject');
@@ -104,6 +105,7 @@ class School_Management {
         $this->loader->add_action('wp_ajax_sm_download_plans_zip', $plugin_public, 'ajax_download_plans_zip');
         $this->loader->add_action('wp_ajax_sm_refresh_system_cache_ajax', $plugin_public, 'ajax_refresh_system');
         $this->loader->add_action('wp_ajax_eess_hr_add_employee', $plugin_public, 'ajax_hr_add_employee');
+        $this->loader->add_action('wp_ajax_eess_bulk_import_employees_ajax', $plugin_public, 'ajax_bulk_import_employees');
 
         // Forgot password AJAX actions
         $this->loader->add_action('wp_ajax_nopriv_eess_forgot_otp', $plugin_public, 'ajax_forgot_otp');
@@ -116,6 +118,10 @@ class School_Management {
         // Registration wizard AJAX actions
         $this->loader->add_action('wp_ajax_nopriv_eess_register_otp', $plugin_public, 'ajax_register_otp');
         $this->loader->add_action('wp_ajax_nopriv_eess_register_submit', $plugin_public, 'ajax_register_submit');
+
+        // Print / PDF action
+        $this->loader->add_action('wp_ajax_sm_print', $plugin_public, 'ajax_sm_print');
+        $this->loader->add_action('wp_ajax_nopriv_sm_print', $plugin_public, 'ajax_sm_print');
 
         // Admin approval actions
         $this->loader->add_action('wp_ajax_eess_approve_user', $plugin_public, 'ajax_approve_user');

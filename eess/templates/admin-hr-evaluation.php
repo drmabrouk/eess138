@@ -46,6 +46,16 @@ $eval_templates = array(
             'm5' => array('label' => 'القيادة والمبادرة والمساهمة في الأنشطة', 'max' => 20)
         )
     ),
+    'phys_health' => array(
+        'name' => 'نموذج تقييم التربية البدنية والصحية (Physical Education)',
+        'metrics' => array(
+            'm1' => array('label' => 'اللياقة البدنية وتطبيق المهارات الرياضية والحركية بفاعلية', 'max' => 20),
+            'm2' => array('label' => 'الاهتمام بالتثقيف الصحي والعادات الغذائية السليمة والوقاية', 'max' => 20),
+            'm3' => array('label' => 'إدارة وتنظيم الأنشطة الرياضية والمسابقات المدرسية والتفاعلية', 'max' => 20),
+            'm4' => array('label' => 'تأمين بيئة رياضية آمنة خالية من الإصابات وتطبيق معايير السلامة', 'max' => 20),
+            'm5' => array('label' => 'تطوير القيادة والروح الرياضية والعمل الجماعي والمثابرة لدى الطلاب', 'max' => 20)
+        )
+    ),
     'administrative' => array(
         'name' => 'نموذج تقييم الكادر الإداري والوظائف المعاونة',
         'metrics' => array(
@@ -286,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eess_submit_evaluatio
         clean_user_cache($target_emp_id);
         wp_cache_flush();
 
-        $success_msg = '✅ تم تسجيل وحفظ تقييم الأداء بنجاح في السجل ومزامنته مع ملف العمل للموظف فوراً.';
+        $success_msg = '✅ تم تسجيل وحفظ تقييم الأداء بنجاح في السجل ومزامنته مع الملف الوظيفي للموظف فوراً.';
         // Refresh local memory global evaluations reference
         $global_evals = get_option('eess_global_evaluations', array());
     }
@@ -335,6 +345,7 @@ $staff_users = get_users(array(
                 <div>
                     <select name="eval_template" id="eval_template_sel" required onchange="eessSwitchEvalTemplate(this.value)" class="sm-select" style="width: 100%; height: 40px; font-size: 13px; font-family:'Cairo'; border-radius:8px;">
                         <option value="academic">نموذج تقييم الكادر التدريسي والأكاديمي</option>
+                        <option value="phys_health">نموذج تقييم التربية البدنية والصحية (Physical Education)</option>
                         <option value="administrative">نموذج تقييم الكادر الإداري والوظائف المعاونة</option>
                         <option value="leadership">نموذج تقييم الكادر القيادي والإشرافي</option>
                     </select>
@@ -420,21 +431,15 @@ $staff_users = get_users(array(
             <table class="sm-table" id="eess-eval-history-table" style="width:100%;">
                 <thead>
                     <tr>
-                        <th>تاريخ التقييم</th>
-                        <th>الموظف المقيّم</th>
-                        <th>القسم</th>
-                        <th>النموذج المستخدم</th>
-                        <th>فترة التقييم</th>
-                        <th>المقيّم المعتمد</th>
-                        <th>الدرجة (%)</th>
-                        <th>التقدير العام</th>
+                        <th style="text-align: right; padding-right: 20px;">تفاصيل الموظف والتقييم</th>
+                        <th>النتيجة الكلية والتقدير</th>
                         <th>حالة الاعتماد</th>
-                        <th>إجراءات التقرير</th>
+                        <th>إجراءات</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (empty($global_evals)): ?>
-                        <tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 30px;">لا يوجد أي سجلات تقييم أداء مدخلة في النظام حتى الآن.</td></tr>
+                        <tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">لا يوجد أي سجلات تقييم أداء مدخلة في النظام حتى الآن.</td></tr>
                     <?php else: ?>
                         <?php foreach ($global_evals as $ev):
                             $e_user = get_userdata($ev['employee_id']);
@@ -448,15 +453,19 @@ $staff_users = get_users(array(
                                 data-template="<?php echo esc_attr($ev['template']); ?>"
                                 data-grade="<?php echo esc_attr($ev['grade']); ?>"
                             >
-                                <td><?php echo date_i18n('Y-m-d H:i', strtotime($ev['date'])); ?></td>
-                                <td style="font-weight: 700; color:#1e293b;"><?php echo esc_html($e_user->display_name); ?></td>
-                                <td><?php echo esc_html($e_dept); ?></td>
-                                <td style="font-size:12px;"><?php echo esc_html($eval_templates[$ev['template']]['name'] ?? 'نموذج مخصص'); ?></td>
-                                <td style="font-weight: 600;"><?php echo esc_html($ev['period']); ?></td>
-                                <td style="font-size:12px; color:#475569;"><?php echo esc_html($ev['evaluator']); ?></td>
-                                <td style="font-family: monospace; font-weight: bold; font-size:14px; color: var(--sm-primary-color);"><?php echo $ev['score']; ?>%</td>
+                                <td style="text-align: right; padding: 12px 20px;">
+                                    <strong style="font-size: 14px; color: #1e293b; display: block;"><?php echo esc_html($e_user->display_name); ?></strong>
+                                    <div style="font-size: 11px; color: #64748b; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                                        <span><strong>القسم:</strong> <?php echo esc_html($e_dept); ?></span> |
+                                        <span><strong>النموذج:</strong> <?php echo esc_html($eval_templates[$ev['template']]['name'] ?? 'نموذج مخصص'); ?></span> |
+                                        <span><strong>الفترة:</strong> <?php echo esc_html($ev['period']); ?></span> |
+                                        <span><strong>التاريخ:</strong> <?php echo date_i18n('Y-m-d H:i', strtotime($ev['date'])); ?></span> |
+                                        <span><strong>بواسطة:</strong> <?php echo esc_html($ev['evaluator']); ?></span>
+                                    </div>
+                                </td>
                                 <td>
-                                    <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">
+                                    <span style="font-family: monospace; font-weight: bold; font-size:14px; color: var(--sm-primary-color);"><?php echo $ev['score']; ?>%</span>
+                                    <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; margin-right: 8px;">
                                         <?php echo esc_html($ev['grade']); ?>
                                     </span>
                                 </td>
@@ -468,8 +477,8 @@ $staff_users = get_users(array(
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <a href="<?php echo add_query_arg('eess_print_eval', $ev['id']); ?>" target="_blank" class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 26px; width: auto; background: #475569; text-decoration: none; color: white !important;">
-                                        🖨️ طباعة التقرير PDF
+                                    <a href="<?php echo add_query_arg('eess_print_eval', $ev['id']); ?>" target="_blank" class="sm-btn" style="padding: 4px 10px; font-size: 11px; height: 26px; width: auto; background: #475569; text-decoration: none; color: white !important; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;">
+                                        🖨️ طباعة PDF
                                     </a>
                                 </td>
                             </tr>

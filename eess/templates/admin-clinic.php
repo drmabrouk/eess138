@@ -32,9 +32,14 @@ $history = $wpdb->get_results("
 
 <div class="sm-clinic-module" dir="rtl">
 
+    <!-- Clinic Search Engine -->
+    <div style="margin-bottom: 25px;">
+        <input type="text" id="eess-clinic-search" onkeyup="eessFilterClinic()" class="sm-input" placeholder="🔍 ابحث عن طالب بالاسم، الصف، أو المحول..." style="height: 42px; border-radius: 8px; width: 100%; font-family: 'Cairo'; padding: 0 15px;">
+    </div>
+
     <!-- PENDING REFERRALS -->
     <div style="margin-bottom: 40px;">
-        <h4 style="border-bottom: 2px solid var(--sm-primary-color); padding-bottom: 10px; margin-bottom: 20px;">الطلاب المحولون (بانتظار الوصول)</h4>
+        <h4 style="padding-bottom: 5px; margin-bottom: 15px; font-weight: 800; color: #1e293b;">الطلاب المحولون (بانتظار الوصول)</h4>
         <?php if (empty($pending_referrals)): ?>
             <div style="padding: 40px; text-align: center; background: #f8fafc; border-radius: 12px; color: var(--sm-text-gray);">لا يوجد طلاب محولون حالياً.</div>
         <?php else: ?>
@@ -74,7 +79,7 @@ $history = $wpdb->get_results("
 
     <!-- HISTORY -->
     <div>
-        <h4 style="border-bottom: 2px solid var(--sm-secondary-color); padding-bottom: 10px; margin-bottom: 20px;">سجل الزيارات اليومية</h4>
+        <h4 style="padding-bottom: 5px; margin-bottom: 15px; font-weight: 800; color: #1e293b;">سجل الزيارات اليومية</h4>
         <?php if (empty($history)): ?>
             <div style="padding: 40px; text-align: center; background: #f8fafc; border-radius: 12px; color: var(--sm-text-gray);">لا يوجد سجلات سابقة.</div>
         <?php else: ?>
@@ -271,4 +276,19 @@ document.addEventListener('click', function(e) {
         results.style.display = 'none';
     }
 });
+
+function eessFilterClinic() {
+    const q = document.getElementById('eess-clinic-search').value.trim().toLowerCase();
+    const rows = document.querySelectorAll('.sm-table tbody tr');
+
+    rows.forEach(row => {
+        if (row.cells.length < 2) return;
+        const text = row.textContent.toLowerCase();
+        if (text.includes(q)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
 </script>

@@ -21,11 +21,20 @@ class SM_Public {
         $user_id = 0;
         if (is_numeric($id_or_email)) {
             $user_id = (int)$id_or_email;
-        } elseif (is_object($id_or_email) && isset($id_or_email->user_id)) {
-            $user_id = (int)$id_or_email->user_id;
+        } elseif (is_object($id_or_email)) {
+            if (isset($id_or_email->user_id)) {
+                $user_id = (int)$id_or_email->user_id;
+            } elseif (isset($id_or_email->ID)) {
+                $user_id = (int)$id_or_email->ID;
+            }
         } elseif (is_string($id_or_email)) {
             $user = get_user_by('email', $id_or_email);
-            if ($user) $user_id = $user->ID;
+            if ($user) {
+                $user_id = $user->ID;
+            } else {
+                $user = get_user_by('login', $id_or_email);
+                if ($user) $user_id = $user->ID;
+            }
         }
 
         if ($user_id) {
@@ -33,6 +42,11 @@ class SM_Public {
             if ($custom_avatar) {
                 $class = isset($args['class']) ? implode(' ', (array)$args['class']) : '';
                 $style = isset($args['style']) ? $args['style'] : '';
+                if (empty($style)) {
+                    $style = 'border-radius: 50% !important; object-fit: cover !important;';
+                } else {
+                    $style .= '; border-radius: 50% !important; object-fit: cover !important;';
+                }
                 $avatar = sprintf(
                     "<img src='%s' class='%s' style='%s' width='%d' height='%d' />",
                     esc_url($custom_avatar),
@@ -1921,6 +1935,110 @@ class SM_Public {
         wp_send_json_success(array('user_id' => $user_id));
     }
 
+    public function ajax_bulk_import_employees() {
+        $user = wp_get_current_user();
+        $roles = (array) $user->roles;
+        $is_admin = in_array('administrator', $roles) || current_user_can('manage_options');
+        $is_sys_admin = in_array('sm_system_admin', $roles);
+        $is_hr = in_array('sm_hr', $roles) || current_user_can('manage_hr');
+
+        if (!$is_admin && !$is_sys_admin && !$is_hr) {
+            wp_send_json_error('غير مصرح لك بالوصول.');
+        }
+
+        if (!wp_verify_nonce($_POST['nonce'], 'eess_hr_add_employee_nonce')) {
+            wp_send_json_error('انتهت صلاحية الجلسة، يرجى تحديث الصفحة.');
+        }
+
+        $records = isset($_POST['records']) ? json_decode(stripslashes($_POST['records']), true) : array();
+        if (empty($records) || !is_array($records)) {
+            wp_send_json_error('لا توجد سجلات مستوردة صالحة.');
+        }
+
+        $success_count = 0;
+        $duplicate_count = 0;
+
+        foreach ($records as $row) {
+            $name = sanitize_text_field($row['name']);
+            $email = sanitize_email($row['email']);
+            $emp_num = sanitize_text_field($row['emp_num']);
+            $dept = sanitize_text_field($row['dept']);
+            $spec = sanitize_text_field($row['specialization']);
+            $phone = sanitize_text_field($row['phone']);
+            $role = sanitize_text_field($row['role']);
+            $school = sanitize_text_field($row['school']);
+
+            // Validate mandatory fields
+            if (empty($name) || empty($email) || empty($role)) {
+                continue;
+            }
+
+            // Check if user exists by email
+            if (email_exists($email)) {
+                $duplicate_count++;
+                continue;
+            }
+
+            // Generate unique username
+            $username = strstr($email, '@', true);
+            if (empty($username)) $username = 'emp_' . rand(1000, 9999);
+            while (username_exists($username)) {
+                $username .= rand(0, 9);
+            }
+
+            $password = wp_generate_password(12, false);
+
+            $user_id = wp_insert_user(array(
+                'user_login' => $username,
+                'user_email' => $email,
+                'display_name' => $name,
+                'user_pass' => $password,
+                'role' => $role
+            ));
+
+            if (is_wp_error($user_id)) {
+                continue;
+            }
+
+            // Set approved approval status for bulk-imported employees
+            update_user_meta($user_id, 'eess_approval_status', 'approved');
+            update_user_meta($user_id, 'eess_employee_number', $emp_num);
+            update_user_meta($user_id, 'eess_department', $dept);
+            update_user_meta($user_id, 'sm_specialization', $spec);
+            update_user_meta($user_id, 'sm_phone', $phone);
+            update_user_meta($user_id, 'eess_school_name', $school);
+            update_user_meta($user_id, 'eess_hr_employment_status', 'active');
+            update_user_meta($user_id, 'sm_temp_pass', $password);
+
+            // Synchronize with organizational assignments
+            global $wpdb;
+            if (!empty($school)) {
+                $school_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}eess_schools WHERE name = %s", $school));
+                if ($school_id) {
+                    update_user_meta($user_id, 'eess_school_id', $school_id);
+                    $wpdb->delete("{$wpdb->prefix}eess_user_assignments", array('user_id' => $user_id));
+                    $wpdb->insert("{$wpdb->prefix}eess_user_assignments", array(
+                        'user_id' => $user_id,
+                        'institution_id' => 1,
+                        'school_id' => $school_id
+                    ));
+                }
+            }
+
+            clean_user_cache($user_id);
+            $success_count++;
+        }
+
+        wp_cache_flush();
+
+        SM_Logger::log('استيراد جماعي للموظفين', "تم استيراد ($success_count) موظف بنجاح، وتجاهل ($duplicate_count) بسبب تكرار البريد.");
+
+        wp_send_json_success(array(
+            'imported' => $success_count,
+            'duplicates' => $duplicate_count
+        ));
+    }
+
     public function ajax_update_generic_user() {
         if (!current_user_can('إدارة_المستخدمين')) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_user_action')) wp_send_json_error('Security check failed');
@@ -2693,6 +2811,72 @@ class SM_Public {
         } else {
             wp_send_json_error('Failed to save grade');
         }
+    }
+
+    public function ajax_import_grades() {
+        if (!is_user_logged_in() || !current_user_can('manage_grades')) {
+            wp_send_json_error('Unauthorized');
+        }
+        if (!wp_verify_nonce($_POST['nonce'], 'sm_grade_action')) {
+            wp_send_json_error('Security check failed');
+        }
+
+        $records = isset($_POST['records']) ? json_decode(stripslashes($_POST['records']), true) : array();
+        if (empty($records) || !is_array($records)) {
+            wp_send_json_error('لا توجد سجلات مستوردة صالحة.');
+        }
+
+        global $wpdb;
+        $success_count = 0;
+        $duplicate_count = 0;
+
+        foreach ($records as $row) {
+            $student_code = sanitize_text_field($row['student_code']);
+            $subject = sanitize_text_field($row['subject']);
+            $term = sanitize_text_field($row['term']);
+            $grade_val = sanitize_text_field($row['grade_val']);
+
+            // Find student by student_code
+            $student_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_students WHERE student_code = %s", $student_code));
+            if (!$student_id) {
+                // If not found by student_code, try by name
+                $student_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}sm_students WHERE name = %s", $student_code));
+            }
+
+            if (!$student_id) {
+                continue;
+            }
+
+            // Check if this result is already recorded (duplicate check)
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$wpdb->prefix}sm_grades WHERE student_id = %d AND subject = %s AND term = %s AND grade_val = %s",
+                $student_id, $subject, $term, $grade_val
+            ));
+
+            if ($existing) {
+                $duplicate_count++;
+                continue;
+            }
+
+            $result = $wpdb->insert("{$wpdb->prefix}sm_grades", array(
+                'student_id' => $student_id,
+                'subject' => $subject,
+                'term' => $term,
+                'grade_val' => $grade_val,
+                'created_at' => current_time('mysql')
+            ));
+
+            if ($result) {
+                $success_count++;
+            }
+        }
+
+        SM_Logger::log('استيراد جماعي للدرجات', "تم استيراد ($success_count) نتيجة بنجاح، وتجاهل ($duplicate_count) نتيجة مكررة.");
+
+        wp_send_json_success(array(
+            'imported' => $success_count,
+            'duplicates' => $duplicate_count
+        ));
     }
 
     public function ajax_get_student_grades_ajax() {
@@ -4425,5 +4609,90 @@ class SM_Public {
         $user_id = intval($_GET['user_id']);
         $scope = EESS_Org_Helper::get_user_scope($user_id);
         wp_send_json_success($scope);
+    }
+
+    public function ajax_sm_print() {
+        $print_type = isset($_GET['print_type']) ? sanitize_key($_GET['print_type']) : '';
+        if (empty($print_type)) {
+            wp_die('نوع الطباعة غير محدد.');
+        }
+
+        if ($print_type === 'lesson_prep') {
+            $prep_id = isset($_GET['prep_id']) ? intval($_GET['prep_id']) : 0;
+            global $wpdb;
+            $prep = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_lesson_preps WHERE id = %d", $prep_id));
+            if (!$prep) {
+                wp_die('التحضير غير موجود.');
+            }
+
+            $data = json_decode($prep->lesson_data, true) ?: array();
+            $teacher = get_userdata($prep->teacher_id);
+            $teacher_name = $teacher ? $teacher->display_name : 'غير محدد';
+            ?>
+            <!DOCTYPE html>
+            <html dir="rtl" lang="ar">
+            <head>
+                <meta charset="UTF-8">
+                <title>وثيقة تحضير الدرس المعتمدة - <?php echo esc_html($prep->title); ?></title>
+                <style>
+                    body { font-family: 'Cairo', Arial, sans-serif; padding: 40px; color: #1e293b; background: white; line-height: 1.6; direction: rtl; text-align: right; }
+                    .header { border-bottom: 3px solid #1e293b; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+                    .title { font-size: 24px; font-weight: 900; margin: 0; color: #1e293b; }
+                    .meta-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+                    .meta-table th, .meta-table td { border: 1px solid #cbd5e1; padding: 12px; text-align: right; }
+                    .meta-table th { background: #f8fafc; font-weight: bold; width: 30%; }
+                    .section-title { font-size: 18px; font-weight: 800; border-bottom: 2px solid #cbd5e1; padding-bottom: 5px; margin: 30px 0 15px 0; color: #1e293b; }
+                    .content-box { background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; font-size: 14px; margin-bottom: 15px; white-space: pre-line; }
+                    @media print {
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body onload="window.print()">
+                <div class="no-print" style="background:#f1f5f9; padding:15px; border-radius:8px; margin-bottom:30px; text-align:center;">
+                    <button onclick="window.print()" style="padding:10px 20px; font-weight:bold; cursor:pointer;">🖨️ اضغط هنا لبدء الطباعة</button>
+                </div>
+
+                <div class="header">
+                    <div>
+                        <h1 class="title">وثيقة إعداد وتحضير الدرس المعتمدة (EESS)</h1>
+                        <p style="margin:5px 0 0 0; color:#64748b;">تاريخ التصدير: <?php echo current_time('Y-m-d H:i'); ?></p>
+                    </div>
+                    <div style="font-weight: 900; font-size: 20px; color: #8b1e1e;">EESS ONLINE</div>
+                </div>
+
+                <table class="meta-table">
+                    <tr><th>اسم المعلم المعدّ</th><td><?php echo esc_html($teacher_name); ?></td></tr>
+                    <tr><th>عنوان الدرس الرئيسي</th><td><?php echo esc_html($prep->title); ?></td></tr>
+                    <tr><th>المادة الدراسية</th><td><?php echo esc_html($prep->subject); ?></td></tr>
+                    <tr><th>الصف والشعبة</th><td><?php echo esc_html($prep->grade_level . ' / ' . $prep->class_section); ?></td></tr>
+                    <tr><th>تاريخ إعطاء الدرس</th><td><?php echo esc_html($prep->lesson_date); ?></td></tr>
+                    <tr><th>حالة وثيقة التحضير الحالية</th><td><?php echo esc_html($prep->status === 'submitted' ? 'معتمد ومقدم' : ($prep->status === 'late' ? 'مقدم متأخر' : 'مسودة')); ?></td></tr>
+                </table>
+
+                <h3 class="section-title">1. الأهداف السلوكية والتعليمية (Objectives)</h3>
+                <div class="content-box"><?php echo esc_html($data['objectives'] ?? 'غير مسجل'); ?></div>
+
+                <h3 class="section-title">2. التمهيد والتهيئة الحافزة (Warm-up)</h3>
+                <div class="content-box"><?php echo esc_html($data['warmup'] ?? 'غير مسجل'); ?></div>
+
+                <h3 class="section-title">3. الاستراتيجيات والأنشطة والخطوات التعليمية</h3>
+                <div class="content-box"><?php echo esc_html($data['activities'] ?? 'غير مسجل'); ?></div>
+
+                <h3 class="section-title">4. التقويم الصفي وأدوات القياس (Evaluation)</h3>
+                <div class="content-box"><?php echo esc_html($data['evaluation'] ?? 'غير مسجل'); ?></div>
+
+                <h3 class="section-title">5. الواجبات المنزلية والمهام الأكاديمية (Homework)</h3>
+                <div class="content-box"><?php echo esc_html($data['homework'] ?? 'لا يوجد واجب صفي مقرر'); ?></div>
+
+                <h3 class="section-title">6. ملاحظات وإرشادات وتأملات تربوية إضافية</h3>
+                <div class="content-box"><?php echo esc_html($data['notes'] ?? 'لا توجد ملاحظات إضافية'); ?></div>
+            </body>
+            </html>
+            <?php
+            exit;
+        } else {
+            wp_die('نوع الطباعة غير مدعوم.');
+        }
     }
 }
