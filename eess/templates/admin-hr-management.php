@@ -16,6 +16,7 @@ $role_map = array(
     'sm_principal' => 'مدير المدرسة',
     'sm_supervisor' => 'مشرف تربوي',
     'sm_coordinator' => 'منسق مادة',
+    'sm_hod' => 'رئيس قسم',
     'sm_teacher' => 'معلم',
     'sm_discipline_supervisor' => 'مشرف سلوك / انضباط',
     'sm_activities_supervisor' => 'مشرف أنشطة',
@@ -694,6 +695,7 @@ if (isset($_GET['manage_employee_id'])) {
                             <select name="user_role" class="sm-select" required style="height: 38px; padding: 0 10px;">
                                 <option value="sm_teacher">معلم</option>
                                 <option value="sm_coordinator">منسق مادة</option>
+                                <option value="sm_hod">رئيس قسم</option>
                                 <option value="sm_supervisor">مشرف تربوي</option>
                                 <option value="sm_principal">مدير المدرسة</option>
                                 <option value="sm_hr">الموارد البشرية (HR)</option>

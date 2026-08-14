@@ -382,6 +382,17 @@ class SM_Activator {
             $coordinator->add_cap('read');
         }
 
+        // 4.5. رئيس قسم (Head of Department) - Review lesson plans, manage department grades & teachers
+        add_role('sm_hod', 'رئيس قسم', array('read' => true));
+        $hod = get_role('sm_hod');
+        if ($hod) {
+            $hod->add_cap($caps['review_plans']);
+            $hod->add_cap($caps['manage_grades']);
+            $hod->add_cap($caps['manage_teachers']);
+            $hod->add_cap($caps['manage_students']);
+            $hod->add_cap('read');
+        }
+
         // 5. معلم (Teacher) - Complaints, search all students, assignments, assigned sections
         add_role('sm_teacher', 'معلم', array('read' => true));
         $teacher = get_role('sm_teacher');
