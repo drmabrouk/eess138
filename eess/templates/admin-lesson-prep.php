@@ -12,9 +12,10 @@ $is_sys_admin = in_array('sm_system_admin', $roles);
 $is_principal = in_array('sm_principal', $roles);
 $is_supervisor = in_array('sm_supervisor', $roles);
 $is_coordinator = in_array('sm_coordinator', $roles);
+$is_activities_sup = in_array('sm_activities_supervisor', $roles);
 $is_teacher = in_array('sm_teacher', $roles);
 
-$can_review = $is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator;
+$can_review = $is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || $is_activities_sup;
 
 // Auto-assign supervisor helper
 if (!function_exists('eess_get_teacher_supervisor')) {
