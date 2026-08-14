@@ -580,6 +580,23 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                         if (!$can_review) {
                             $conditions[] = "p.teacher_id = %d";
                             $params[] = $user_id;
+                        } elseif ($is_hod && !$is_admin && !$is_sys_admin) {
+                            $hod_subject = get_user_meta($user_id, 'sm_specialization', true);
+                            $hod_scope = EESS_Org_Helper::get_user_scope($user_id);
+                            $hod_schools = !empty($hod_scope['schools']) ? $hod_scope['schools'] : array();
+
+                            if (!empty($hod_subject)) {
+                                $conditions[] = "p.subject = %s";
+                                $params[] = $hod_subject;
+                            }
+
+                            if (!empty($hod_schools)) {
+                                $placeholders = implode(',', array_fill(0, count($hod_schools), '%d'));
+                                $conditions[] = "p.teacher_id IN (SELECT user_id FROM {$wpdb->prefix}eess_user_assignments WHERE school_id IN ($placeholders))";
+                                foreach ($hod_schools as $sch_id) {
+                                    $params[] = $sch_id;
+                                }
+                            }
                         }
 
                         if (isset($_GET['filter_date']) && !empty($_GET['filter_date'])) {
@@ -1233,8 +1250,21 @@ function typeOfActiveReport() {
 
 <!-- Dynamic Lesson Preparation Reporting & Compliance Modal -->
 <?php
-$prep_report_teachers = get_users(array('role' => 'sm_teacher'));
-$prep_report_submitted = $wpdb->get_results("SELECT p.*, u.display_name as teacher_name FROM {$wpdb->prefix}sm_lesson_preps p LEFT JOIN {$wpdb->users} u ON p.teacher_id = u.ID WHERE p.status IN ('submitted', 'approved', 'late') ORDER BY p.id DESC LIMIT 30");
+if ($is_hod && !$is_admin && !$is_sys_admin) {
+    $hod_subject = get_user_meta($user_id, 'sm_specialization', true);
+    $prep_report_teachers = get_users(array(
+        'role'       => 'sm_teacher',
+        'meta_key'   => 'sm_specialization',
+        'meta_value' => $hod_subject
+    ));
+    $prep_report_submitted = $wpdb->get_results($wpdb->prepare(
+        "SELECT p.*, u.display_name as teacher_name FROM {$wpdb->prefix}sm_lesson_preps p LEFT JOIN {$wpdb->users} u ON p.teacher_id = u.ID WHERE p.subject = %s AND p.status IN ('submitted', 'approved', 'late') ORDER BY p.id DESC LIMIT 30",
+        $hod_subject
+    ));
+} else {
+    $prep_report_teachers = get_users(array('role' => 'sm_teacher'));
+    $prep_report_submitted = $wpdb->get_results("SELECT p.*, u.display_name as teacher_name FROM {$wpdb->prefix}sm_lesson_preps p LEFT JOIN {$wpdb->users} u ON p.teacher_id = u.ID WHERE p.status IN ('submitted', 'approved', 'late') ORDER BY p.id DESC LIMIT 30");
+}
 
 $prep_report_inst = $wpdb->get_results("SELECT COALESCE((SELECT meta_value FROM {$wpdb->usermeta} WHERE user_id = p.teacher_id AND meta_key = 'eess_school_name'), 'خدمات الأنظمة الإلكترونية التعليمية') as inst, COUNT(*) as cnt FROM {$wpdb->prefix}sm_lesson_preps p GROUP BY inst ORDER BY cnt DESC");
 $prep_report_dept = $wpdb->get_results("SELECT COALESCE((SELECT meta_value FROM {$wpdb->usermeta} WHERE user_id = p.teacher_id AND meta_key = 'eess_department'), 'غير محدد') as dept, COUNT(*) as cnt FROM {$wpdb->prefix}sm_lesson_preps p GROUP BY dept ORDER BY cnt DESC");

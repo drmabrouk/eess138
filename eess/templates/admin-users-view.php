@@ -53,6 +53,7 @@ $role_map = array(
     'sm_principal' => 'مدير المدرسة',
     'sm_supervisor' => 'مشرف تربوي',
     'sm_coordinator' => 'منسق مادة',
+    'sm_hod' => 'رئيس قسم',
     'sm_teacher' => 'معلم',
     'sm_discipline_supervisor' => 'مشرف سلوك / انضباط',
     'sm_activities_supervisor' => 'مشرف أنشطة',
@@ -394,11 +395,19 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" style="display:none;">
-                    <label class="sm-label">المادة التخصصية (للمعلمين والمنسقين):</label>
+                    <label class="sm-label">المادة التخصصية / قسم المادة (للمعلمين والمنسقين ورؤساء الأقسام):</label>
                     <select name="specialization" class="sm-select">
                         <option value="">-- اختر المادة --</option>
                         <?php foreach($unique_subjects as $sub_name): ?>
                             <option value="<?php echo esc_attr($sub_name); ?>"><?php echo esc_html($sub_name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="sm-form-group hod-inst-group" style="display:none; grid-column: span 2;">
+                    <label class="sm-label" style="color: var(--sm-primary-color); font-weight: 800;">المدارس والمدارس/المؤسسات المسندة لرئيس القسم (يمكن اختيار أكثر من مدرسة):</label>
+                    <select name="assign_schools[]" class="sm-select" multiple style="height: 80px; font-size: 12px;">
+                        <?php foreach ($all_registered_schools as $sch): ?>
+                            <option value="<?php echo $sch->id; ?>"><?php echo esc_html($sch->name); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -467,11 +476,19 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                     </select>
                 </div>
                 <div class="sm-form-group spec-group" id="edit_spec_group" style="display:none;">
-                    <label class="sm-label">المادة التخصصية (للمعلمين والمنسقين):</label>
+                    <label class="sm-label">المادة التخصصية / قسم المادة (للمعلمين والمنسقين ورؤساء الأقسام):</label>
                     <select name="specialization" id="edit_u_spec" class="sm-select">
                         <option value="">-- اختر المادة --</option>
                         <?php foreach($unique_subjects as $sub_name): ?>
                             <option value="<?php echo esc_attr($sub_name); ?>"><?php echo esc_html($sub_name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="sm-form-group hod-inst-group" style="display:none; grid-column: span 2;">
+                    <label class="sm-label" style="color: var(--sm-primary-color); font-weight: 800;">المدارس والمدارس/المؤسسات المسندة لرئيس القسم (يمكن اختيار أكثر من مدرسة):</label>
+                    <select name="assign_schools[]" id="edit_u_assign_schools" class="sm-select" multiple style="height: 80px; font-size: 12px;">
+                        <?php foreach ($all_registered_schools as $sch): ?>
+                            <option value="<?php echo $sch->id; ?>"><?php echo esc_html($sch->name); ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -789,10 +806,16 @@ function eessRejectUser(userId) {
     window.toggleSpecialization = function(select, mode = 'add') {
         const form = select.closest('form');
         const group = form.querySelector('.spec-group');
-        if (select.value === 'sm_teacher' || select.value === 'sm_coordinator') {
-            group.style.display = 'block';
+        const hodGroup = form.querySelector('.hod-inst-group');
+        if (select.value === 'sm_teacher' || select.value === 'sm_coordinator' || select.value === 'sm_hod') {
+            if (group) group.style.display = 'block';
         } else {
-            group.style.display = 'none';
+            if (group) group.style.display = 'none';
+        }
+        if (select.value === 'sm_hod') {
+            if (hodGroup) hodGroup.style.display = 'block';
+        } else {
+            if (hodGroup) hodGroup.style.display = 'none';
         }
     };
 
