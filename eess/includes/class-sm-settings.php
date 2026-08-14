@@ -642,40 +642,12 @@ class SM_Settings {
             return true;
         }
 
-        switch ($key) {
-            case 'summary':
-                return true;
-            case 'stats':
-                return ($is_principal || $is_supervisor || $is_teacher || $is_student || $is_parent || in_array('sm_discipline_supervisor', $roles) || in_array('sm_activities_supervisor', $roles) || in_array('sm_transportation_supervisor', $roles) || in_array('sm_bus_supervisor', $roles) || in_array('sm_hr', $roles));
-            case 'students':
-                return ($is_principal || $is_supervisor || $is_teacher || in_array('sm_discipline_supervisor', $roles));
-            case 'teachers':
-            case 'parents':
-                return ($is_principal || $is_supervisor);
-            case 'grades':
-                return ($is_principal || $is_supervisor || $is_coordinator || $is_teacher || $is_student || $is_parent);
-            case 'attendance':
-                return ($is_principal || $is_supervisor || $is_teacher);
-            case 'employee-profile':
-                return ($is_principal || $is_supervisor || $is_coordinator || $is_teacher || in_array('sm_hr', $roles) || in_array('sm_discipline_supervisor', $roles) || in_array('sm_activities_supervisor', $roles) || in_array('sm_transportation_supervisor', $roles) || in_array('sm_bus_supervisor', $roles) || $is_clinic);
-            case 'hr-evaluation':
-                return ($is_principal || $is_supervisor || $is_coordinator || in_array('sm_hr', $roles) || user_can($user_id, 'manage_hr'));
-            case 'hr-management':
-                return (in_array('sm_hr', $roles) || user_can($user_id, 'manage_hr'));
-            case 'lesson-plans':
-                return ($is_principal || $is_supervisor || $is_coordinator || $is_teacher);
-            case 'assignments':
-                return ($is_teacher || $is_student);
-            case 'documents':
-                return true;
-            case 'clinic':
-                return ($is_principal || $is_supervisor || $is_clinic);
-            case 'school-structure':
-            case 'global-settings':
-                return false; // Only admins and sys admins can access, which is handled above
-            default:
-                return false;
+        if ($key === 'school-structure' || $key === 'global-settings') {
+            return false;
         }
+
+        // The "Customize Sidebar Section Visibility by Role" settings are the central source of truth.
+        return self::is_section_visible($key, $user_id);
     }
 
     public static function is_section_visible($section, $user_id = null) {

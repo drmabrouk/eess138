@@ -1570,18 +1570,10 @@ class SM_Public {
         $is_student = in_array('sm_student', $roles);
         $is_parent = in_array('sm_parent', $roles);
 
-        // Security / Capability check for tabs
-        if ($active_tab === 'record' && !current_user_can('تسجيل_مخالفة')) $active_tab = 'summary';
-        if ($active_tab === 'students' && !current_user_can('إدارة_الطلاب')) $active_tab = 'summary';
-        if ($active_tab === 'teachers' && !current_user_can('إدارة_المستخدمين')) $active_tab = 'summary';
-        if ($active_tab === 'hr-management' && !($is_admin || $is_sys_admin || in_array('sm_hr', $roles) || current_user_can('manage_hr'))) $active_tab = 'summary';
-        if ($active_tab === 'hr-evaluation' && !($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || in_array('sm_hr', $roles) || current_user_can('manage_hr'))) $active_tab = 'summary';
-        if ($active_tab === 'confiscated' && !current_user_can('إدارة_المخالفات')) $active_tab = 'summary';
-        if ($active_tab === 'attendance' && !current_user_can('إدارة_الطلاب')) $active_tab = 'summary';
-        if ($active_tab === 'clinic' && !current_user_can('إدارة_العيادة')) $active_tab = 'summary';
-        if ($active_tab === 'global-settings' && !current_user_can('إدارة_النظام')) $active_tab = 'summary';
-        if ($active_tab === 'lesson-plans' && !($is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || $is_teacher)) $active_tab = 'summary';
-        if ($active_tab === 'assignments' && !($is_teacher || $is_student || $is_admin || $is_sys_admin)) $active_tab = 'summary';
+        // Security / Capability check for tabs - synchronize with Central Sidebar Section Visibility
+        if (!$is_admin && !SM_Settings::is_section_visible($active_tab)) {
+            $active_tab = 'summary';
+        }
 
         // Fetch data based on tab
         switch ($active_tab) {
