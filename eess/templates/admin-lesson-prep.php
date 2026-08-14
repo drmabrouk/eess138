@@ -316,6 +316,24 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                 <?php echo ($edit_prep && $edit_prep->id > 0) ? 'تعديل وثيقة تحضير درس' : 'إعداد وثيقة تحضير درس جديدة'; ?>
             </h3>
 
+            <?php
+            $assigned_subject = get_user_meta($user_id, 'sm_specialization', true) ?: '';
+            $is_locked = ($is_teacher && !empty($assigned_subject));
+            $current_subject = !empty($edit_prep->subject) ? $edit_prep->subject : $assigned_subject;
+
+            $is_pe_subject = false;
+            if (!empty($current_subject)) {
+                $sub_lower = strtolower($current_subject);
+                $is_pe_subject = (
+                    strpos($sub_lower, 'رياضية') !== false ||
+                    strpos($sub_lower, 'بدنية') !== false ||
+                    strpos($sub_lower, 'pe') !== false ||
+                    strpos($sub_lower, 'physical') !== false ||
+                    strpos($sub_lower, 'health') !== false
+                );
+            }
+            ?>
+
             <form method="post" id="eess-lesson-prep-wizard-form">
                 <?php wp_nonce_field('eess_lesson_prep_action', 'eess_lesson_prep_nonce'); ?>
                 <?php if ($edit_prep): ?>
@@ -360,12 +378,17 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                         </div>
                         <div>
                             <label class="sm-label" style="font-weight: 700; font-size: 12px;">المادة الدراسية (بالعربية) <span style="color:#ef4444;">*</span></label>
-                            <select id="eess_lesson_subject" name="lesson_subject" class="sm-select" style="height: 38px; font-size: 12px;">
-                                <option value="">-- اختر المادة --</option>
-                                <?php foreach($unique_subjects as $subj_name): ?>
-                                    <option value="<?php echo esc_attr($subj_name); ?>" <?php selected(($edit_prep->subject ?? '') === $subj_name); ?>><?php echo esc_html($subj_name); ?></option>
-                                <?php endforeach; ?>
-                            </select>
+                            <?php if ($is_locked): ?>
+                                <input type="text" value="<?php echo esc_attr($assigned_subject); ?>" class="sm-input" style="height: 38px; font-size: 12px; background: #f1f5f9; cursor: not-allowed;" readonly>
+                                <input type="hidden" id="eess_lesson_subject" name="lesson_subject" value="<?php echo esc_attr($assigned_subject); ?>">
+                            <?php else: ?>
+                                <select id="eess_lesson_subject" name="lesson_subject" class="sm-select" style="height: 38px; font-size: 12px;">
+                                    <option value="">-- اختر المادة --</option>
+                                    <?php foreach($unique_subjects as $subj_name): ?>
+                                        <option value="<?php echo esc_attr($subj_name); ?>" <?php selected($current_subject === $subj_name); ?>><?php echo esc_html($subj_name); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            <?php endif; ?>
                         </div>
                         <div>
                             <label class="sm-label" style="font-weight: 700; font-size: 12px;">الصف الدراسي <span style="color:#ef4444;">*</span></label>
@@ -384,41 +407,77 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
 
                 <!-- Stage 2: Objectives & Warm-up -->
                 <div class="eess-prep-wizard-stage" id="eess-prep-stage-2" style="display: none;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثانية: صياغة الأهداف التعليمية والتمهيد</h4>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">1. الأهداف السلوكية والتعليمية (Objectives) <span style="color:#ef4444;">*</span></label>
-                        <textarea id="eess_objectives" name="objectives" class="sm-input" style="height: 90px; font-size: 12px;" placeholder="أدخل الأهداف السلوكية المحددة والواضحة للدرس..."><?php echo esc_textarea($data['objectives'] ?? ''); ?></textarea>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">2. التمهيد والتهيئة الحافزة (Warm-up) <span style="color:#ef4444;">*</span></label>
-                        <textarea id="eess_warmup" name="warmup" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="نشاط تمهيدي لجذب انتباه الطلاب للمفهوم الجديد..."><?php echo esc_textarea($data['warmup'] ?? ''); ?></textarea>
-                    </div>
+                    <?php if ($is_pe_subject): ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثانية: الإعداد البدني والمهاري للتربية الرياضية والبدنية</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">1. الإعداد البدني (Physical Preparation) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_objectives" name="objectives" class="sm-input" style="height: 90px; font-size: 12px;" placeholder="تمارين الإحماء واللياقة العامة والخاصة بالمهارة..."><?php echo esc_textarea($data['objectives'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">2. الإعداد المهاري (Skill Preparation) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_warmup" name="warmup" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="شرح وعرض الخطوات الفنية والتعليمية للمهارة المقررة الحركية..."><?php echo esc_textarea($data['warmup'] ?? ''); ?></textarea>
+                        </div>
+                    <?php else: ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثانية: صياغة الأهداف التعليمية والتمهيد</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">1. الأهداف السلوكية والتعليمية (Objectives) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_objectives" name="objectives" class="sm-input" style="height: 90px; font-size: 12px;" placeholder="أدخل الأهداف السلوكية المحددة والواضحة للدرس..."><?php echo esc_textarea($data['objectives'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">2. التمهيد والتهيئة الحافزة (Warm-up) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_warmup" name="warmup" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="نشاط تمهيدي لجذب انتباه الطلاب للمفهوم الجديد..."><?php echo esc_textarea($data['warmup'] ?? ''); ?></textarea>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Stage 3: Activities & Evaluation -->
                 <div class="eess-prep-wizard-stage" id="eess-prep-stage-3" style="display: none;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثالثة: الأنشطة والتقويم الصفي</h4>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">3. الاستراتيجيات، الأنشطة والخطوات التعليمية <span style="color:#ef4444;">*</span></label>
-                        <textarea id="eess_activities" name="activities" class="sm-input" style="height: 100px; font-size: 12px;" placeholder="شرح طريقة عرض المفهوم والوسائل والأنشطة المتبعة..."><?php echo esc_textarea($data['activities'] ?? ''); ?></textarea>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">4. التقويم الصفي وأدوات القياس (Evaluation & Assessment) <span style="color:#ef4444;">*</span></label>
-                        <textarea id="eess_evaluation" name="evaluation" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="أسئلة وأدوات تقييم فهم واستيعاب الطلاب خلال الحصة..."><?php echo esc_textarea($data['evaluation'] ?? ''); ?></textarea>
-                    </div>
+                    <?php if ($is_pe_subject): ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثالثة: النشاط العملي والتطبيق والتهدئة</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">3. النشاط الرئيسي/العملي (Main/Practical Activity) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_activities" name="activities" class="sm-input" style="height: 100px; font-size: 12px;" placeholder="الألعاب، التقسيمات، والمنافسات التطبيقية للمهارات الرياضية..."><?php echo esc_textarea($data['activities'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">4. الخاتمة والتهدئة (Cool-down & Closing) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_evaluation" name="evaluation" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="تمارين الاسترخاء وتجميع الطلاب، والتقييم الختامي للأداء..."><?php echo esc_textarea($data['evaluation'] ?? ''); ?></textarea>
+                        </div>
+                    <?php else: ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الثالثة: الأنشطة والتقويم الصفي</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">3. الاستراتيجيات، الأنشطة والخطوات التعليمية <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_activities" name="activities" class="sm-input" style="height: 100px; font-size: 12px;" placeholder="شرح طريقة عرض المفهوم والوسائل والأنشطة المتبعة..."><?php echo esc_textarea($data['activities'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">4. التقويم الصفي وأدوات القياس (Evaluation & Assessment) <span style="color:#ef4444;">*</span></label>
+                            <textarea id="eess_evaluation" name="evaluation" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="أسئلة وأدوات تقييم فهم واستيعاب الطلاب خلال الحصة..."><?php echo esc_textarea($data['evaluation'] ?? ''); ?></textarea>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Stage 4: Homework & Notes -->
                 <div class="eess-prep-wizard-stage" id="eess-prep-stage-4" style="display: none;">
-                    <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الرابعة: الواجبات والملاحظات التربوية</h4>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">5. الواجبات المنزلية والمهام الأكاديمية (Homework)</label>
-                        <textarea id="eess_homework" name="homework" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="حدد المهام أو الواجبات المطلوبة من الطلاب..."><?php echo esc_textarea($data['homework'] ?? ''); ?></textarea>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label class="sm-label" style="font-weight: 700; font-size: 12px;">6. ملاحظات وإرشادات وتأملات مهنية إضافية</label>
-                        <textarea id="eess_notes" name="notes" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="أي ملاحظات أو إرشادات تربوية إضافية..."><?php echo esc_textarea($data['notes'] ?? ''); ?></textarea>
-                    </div>
+                    <?php if ($is_pe_subject): ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الرابعة: التكليفات الرياضية وإرشادات الأمن والسلامة</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">5. الواجبات أو التكليفات البدنية المقررة (Physical Homework)</label>
+                            <textarea id="eess_homework" name="homework" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="حدد المهام الرياضية أو التمارين البدنية المطلوبة من الطلاب..."><?php echo esc_textarea($data['homework'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">6. توجيهات الأمن والسلامة والملاحظات</label>
+                            <textarea id="eess_notes" name="notes" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="إرشادات الأمن والسلامة في الملعب وأي ملاحظات تربوية..."><?php echo esc_textarea($data['notes'] ?? ''); ?></textarea>
+                        </div>
+                    <?php else: ?>
+                        <h4 style="margin: 0 0 15px 0; font-size: 13px; font-weight: 800; color: var(--sm-primary-color);">الخطوة الرابعة: الواجبات والملاحظات التربوية</h4>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">5. الواجبات المنزلية والمهام الأكاديمية (Homework)</label>
+                            <textarea id="eess_homework" name="homework" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="حدد المهام أو الواجبات المطلوبة من الطلاب..."><?php echo esc_textarea($data['homework'] ?? ''); ?></textarea>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label class="sm-label" style="font-weight: 700; font-size: 12px;">6. ملاحظات وإرشادات وتأملات مهنية إضافية</label>
+                            <textarea id="eess_notes" name="notes" class="sm-input" style="height: 80px; font-size: 12px;" placeholder="أي ملاحظات أو إرشادات تربوية إضافية..."><?php echo esc_textarea($data['notes'] ?? ''); ?></textarea>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Stage 5: Final Review & Confirmation -->
@@ -574,16 +633,49 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                                 }
                         ?>
                         <tr style="font-size: 12px;">
-                            <td style="font-weight: 700;"><?php echo date_i18n('Y-m-d', strtotime($sub->lesson_date)); ?></td>
+                            <td style="font-weight: 700;">
+                                <?php echo date_i18n('Y-m-d', strtotime($sub->lesson_date)); ?>
+                                <?php
+                                $weekday_names = array(
+                                    'Sunday' => 'الأحد',
+                                    'Monday' => 'الاثنين',
+                                    'Tuesday' => 'الثلاثاء',
+                                    'Wednesday' => 'الأربعاء',
+                                    'Thursday' => 'الخميس',
+                                    'Friday' => 'الجمعة',
+                                    'Saturday' => 'السبت'
+                                );
+                                $eng_day = date('l', strtotime($sub->lesson_date));
+                                $day_name = $weekday_names[$eng_day] ?? $eng_day;
+                                ?>
+                                <div style="font-size: 10px; color: #64748b; font-weight: normal; margin-top: 3px;"><?php echo esc_html($day_name); ?></div>
+                            </td>
                             <?php if ($can_review): ?>
-                                <td><?php echo esc_html($sub->teacher_name); ?></td>
+                                <td>
+                                    <?php echo esc_html($sub->teacher_name); ?>
+                                    <?php
+                                    $teacher_emp_id = get_user_meta($sub->teacher_id, 'eess_employee_number', true);
+                                    if (!empty($teacher_emp_id)): ?>
+                                        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">رقم الموظف: <?php echo esc_html($teacher_emp_id); ?></div>
+                                    <?php endif; ?>
+                                </td>
                             <?php endif; ?>
                             <td>
                                 <div style="font-weight:700; color:var(--sm-dark-color);"><?php echo esc_html($sub->title); ?></div>
                                 <div style="font-size:10px; color:#64748b;"><?php echo esc_html($sub->subject); ?></div>
                             </td>
-                            <td><?php echo esc_html($sub->grade_level . ' (' . $sub->class_section . ')'); ?></td>
-                            <td><span style="font-weight:bold; color: #64748b;">إصدار <?php echo $sub->version; ?></span></td>
+                            <td>
+                                <?php
+                                $teacher_school = get_user_meta($sub->teacher_id, 'eess_school_name', true);
+                                if (empty($teacher_school)) {
+                                    $teacher_school = $school['school_name'] ?? '';
+                                }
+                                if (!empty($teacher_school)): ?>
+                                    <div style="font-size: 10px; color: #0284c7; font-weight: bold; margin-bottom: 3px;"><?php echo esc_html($teacher_school); ?></div>
+                                <?php endif; ?>
+                                <?php echo esc_html($sub->grade_level . ' (' . $sub->class_section . ')'); ?>
+                            </td>
+                            <td><span style="font-weight:bold; color: #64748b;"><?php echo $sub->version; ?></span></td>
                             <td>
                                 <?php if ($sub->delay_seconds > 0): ?>
                                     <span style="color: #dc2626; font-weight: 700; font-size: 10px;">⚠️ متأخر: <?php echo $delay_desc; ?></span>
@@ -609,19 +701,41 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                                 </span>
                             </td>
                             <td>
-                                <div style="display:flex; gap:5px;">
-                                    <button onclick="smOpenPrepViewer(<?php echo $sub->id; ?>)" class="sm-btn" style="padding: 3px 6px; font-size:10px; width:auto; background:var(--sm-secondary-color); height: 26px;">عرض</button>
-                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=lesson_prep&prep_id=' . $sub->id); ?>" target="_blank" class="sm-btn" style="padding: 3px 6px; font-size:10px; width:auto; background:#1e293b; height: 26px; text-decoration:none; color:white !important; display:inline-flex; align-items:center; justify-content:center; border-radius:4px;">🖨️ طباعة</a>
+                                <div style="display:flex; gap:4px; flex-wrap: wrap;">
+                                    <!-- View Button -->
+                                    <button onclick="smOpenPrepViewer(<?php echo $sub->id; ?>)" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#0284c7; color: white !important; height: 24px; border:none; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+                                        <span class="dashicons dashicons-visibility" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
+                                        <span>عرض</span>
+                                    </button>
+
+                                    <!-- Print Button -->
+                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=lesson_prep&prep_id=' . $sub->id); ?>" target="_blank" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#475569; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
+                                        <span class="dashicons dashicons-printer" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
+                                        <span>طباعة</span>
+                                    </a>
 
                                     <?php if ($is_teacher): ?>
+                                        <!-- Edit Button -->
                                         <?php if ($sub->status === 'draft' || $sub->status === 'revision_required'): ?>
-                                            <a href="<?php echo add_query_arg('edit_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 3px 6px; font-size:10px; width:auto; background:var(--sm-primary-color); text-decoration:none; color:white !important; height: 26px;">تعديل</a>
+                                            <a href="<?php echo add_query_arg('edit_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#d97706; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
+                                                <span class="dashicons dashicons-edit" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
+                                                <span>تعديل</span>
+                                            </a>
                                         <?php endif; ?>
-                                        <a href="<?php echo add_query_arg('duplicate_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 3px 6px; font-size:10px; width:auto; background:#475569; text-decoration:none; color:white !important; height: 26px;">تكرار</a>
+
+                                        <!-- Duplicate Button -->
+                                        <a href="<?php echo add_query_arg('duplicate_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#64748b; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
+                                            <span class="dashicons dashicons-admin-page" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
+                                            <span>تكرار</span>
+                                        </a>
                                     <?php endif; ?>
 
+                                    <!-- Approve Button -->
                                     <?php if ($can_review && ($sub->status === 'submitted' || $sub->status === 'late')): ?>
-                                        <button onclick="smOpenReviewModal(<?php echo $sub->id; ?>, '<?php echo esc_js($sub->title); ?>')" class="sm-btn" style="padding: 3px 6px; font-size:10px; width:auto; background:#16a34a; height: 26px;">اعتماد</button>
+                                        <button onclick="smOpenReviewModal(<?php echo $sub->id; ?>, '<?php echo esc_js($sub->title); ?>')" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#16a34a; color: white !important; height: 24px; border:none; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
+                                            <span class="dashicons dashicons-yes" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
+                                            <span>اعتماد</span>
+                                        </button>
                                     <?php endif; ?>
                                 </div>
                             </td>
@@ -905,6 +1019,14 @@ function eessGoToPrepStage(stageNum) {
         // Render live summary of all details
         const summaryEl = document.getElementById('eess-prep-review-live-summary');
         if (summaryEl) {
+            const isPeSubject = <?php echo $is_pe_subject ? 'true' : 'false'; ?>;
+            const label1 = isPeSubject ? 'الإعداد البدني (Physical Prep):' : 'الأهداف السلوكية والتعليمية:';
+            const label2 = isPeSubject ? 'الإعداد المهاري (Skill Prep):' : 'التمهيد والتهيئة الحافزة:';
+            const label3 = isPeSubject ? 'النشاط الرئيسي/العملي (Practical Activity):' : 'الاستراتيجيات والأنشطة والخطوات:';
+            const label4 = isPeSubject ? 'الخاتمة والتهدئة (Cool-down & Closing):' : 'التقويم الصفي وأدوات القياس:';
+            const label5 = isPeSubject ? 'الواجبات أو التكليفات البدنية:' : 'الواجبات المنزلية والمهام الأكاديمية:';
+            const label6 = isPeSubject ? 'توجيهات الأمن والسلامة والملاحظات:' : 'ملاحظات وإرشادات وتأملات مهنية:';
+
             summaryEl.innerHTML = `
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; border-bottom:1px solid #cbd5e1; padding-bottom:10px; margin-bottom:10px;">
                     <div><strong>عنوان الدرس:</strong> ${document.getElementById('eess_lesson_title').value}</div>
@@ -913,12 +1035,12 @@ function eessGoToPrepStage(stageNum) {
                     <div><strong>الشعبة:</strong> ${document.getElementById('eess_lesson_section').value}</div>
                     <div><strong>التاريخ:</strong> ${document.getElementById('eess_lesson_date').value}</div>
                 </div>
-                <div style="margin-bottom:10px;"><strong>1. الأهداف السلوكية والتعليمية:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_objectives').value.replace(/\\n/g, '<br>')}</p></div>
-                <div style="margin-bottom:10px;"><strong>2. التمهيد والتهيئة الحافزة:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_warmup').value.replace(/\\n/g, '<br>')}</p></div>
-                <div style="margin-bottom:10px;"><strong>3. الاستراتيجيات والأنشطة والخطوات:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_activities').value.replace(/\\n/g, '<br>')}</p></div>
-                <div style="margin-bottom:10px;"><strong>4. التقويم الصفي وأدوات القياس:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_evaluation').value.replace(/\\n/g, '<br>')}</p></div>
-                <div style="margin-bottom:10px;"><strong>5. الواجبات المنزلية والمهام الأكاديمية:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_homework').value.replace(/\\n/g, '<br>')}</p></div>
-                <div><strong>6. ملاحظات وإرشادات وتأملات مهنية:</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_notes').value.replace(/\\n/g, '<br>')}</p></div>
+                <div style="margin-bottom:10px;"><strong>1. ${label1}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_objectives').value.replace(/\n/g, '<br>')}</p></div>
+                <div style="margin-bottom:10px;"><strong>2. ${label2}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_warmup').value.replace(/\n/g, '<br>')}</p></div>
+                <div style="margin-bottom:10px;"><strong>3. ${label3}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_activities').value.replace(/\n/g, '<br>')}</p></div>
+                <div style="margin-bottom:10px;"><strong>4. ${label4}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_evaluation').value.replace(/\n/g, '<br>')}</p></div>
+                <div style="margin-bottom:10px;"><strong>5. ${label5}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_homework').value.replace(/\n/g, '<br>')}</p></div>
+                <div><strong>6. ${label6}</strong><p style="margin:5px 0 0 0; color:#475569;">${document.getElementById('eess_notes').value.replace(/\n/g, '<br>')}</p></div>
             `;
         }
     } else {
@@ -970,6 +1092,16 @@ function smOpenPrepViewer(id) {
 
     document.getElementById('view-modal-title').innerText = data.title;
 
+    const subLower = data.subject.toLowerCase();
+    const isPe = (subLower.indexOf('رياضية') !== -1 || subLower.indexOf('بدنية') !== -1 || subLower.indexOf('pe') !== -1 || subLower.indexOf('physical') !== -1 || subLower.indexOf('health') !== -1);
+
+    const label1 = isPe ? 'الإعداد البدني (Physical Prep)' : 'الأهداف السلوكية والتعليمية';
+    const label2 = isPe ? 'الإعداد المهاري (Skill Prep)' : 'التمهيد والتهيئة الحافزة';
+    const label3 = isPe ? 'النشاط الرئيسي/العملي (Main/Practical Activity)' : 'الاستراتيجيات والأنشطة والخطوات التعليمية الاستراتيجية';
+    const label4 = isPe ? 'الخاتمة والتهدئة (Cool-down & Closing)' : 'التقويم الصفي وأدوات القياس';
+    const label5 = isPe ? 'الواجبات أو التكليفات البدنية المقررة' : 'الواجبات المنزلية والمهام الأكاديمية';
+    const label6 = isPe ? 'توجيهات الأمن والسلامة والملاحظات' : 'ملاحظات تربوية وتأملات إضافية';
+
     let html = `
         <div style="background:#f8fafc; padding: 12px; border-radius: 8px; border:1px solid #e2e8f0; margin-bottom:15px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size: 12px;">
             <div><strong>المادة:</strong> ${data.subject}</div>
@@ -977,27 +1109,27 @@ function smOpenPrepViewer(id) {
             <div><strong>تاريخ الدرس:</strong> ${data.date}</div>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid var(--sm-primary-color); padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:var(--sm-primary-color); font-size:12px; font-weight:800;">الأهداف السلوكية والتعليمية</h4>
+            <h4 style="margin:0 0 3px 0; color:var(--sm-primary-color); font-size:12px; font-weight:800;">${label1}</h4>
             <p style="margin:0; font-size:12px;">${data.objectives.replace(/\n/g, '<br>')}</p>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid var(--sm-secondary-color); padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:var(--sm-secondary-color); font-size:12px; font-weight:800;">التمهيد والتهيئة الحافزة</h4>
+            <h4 style="margin:0 0 3px 0; color:var(--sm-secondary-color); font-size:12px; font-weight:800;">${label2}</h4>
             <p style="margin:0; font-size:12px;">${data.warmup.replace(/\n/g, '<br>')}</p>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid var(--sm-accent-color); padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:var(--sm-accent-color); font-size:12px; font-weight:800;">الأنشطة والخطوات التعليمية الاستراتيجية</h4>
+            <h4 style="margin:0 0 3px 0; color:var(--sm-accent-color); font-size:12px; font-weight:800;">${label3}</h4>
             <p style="margin:0; font-size:12px;">${data.activities.replace(/\n/g, '<br>')}</p>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid var(--sm-dark-color); padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:var(--sm-dark-color); font-size:12px; font-weight:800;">التقويم الصفي وأدوات القياس</h4>
+            <h4 style="margin:0 0 3px 0; color:var(--sm-dark-color); font-size:12px; font-weight:800;">${label4}</h4>
             <p style="margin:0; font-size:12px;">${data.evaluation.replace(/\n/g, '<br>')}</p>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid #8b1e1e; padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:#8b1e1e; font-size:12px; font-weight:800;">الواجبات المنزلية والمهام الأكاديمية</h4>
+            <h4 style="margin:0 0 3px 0; color:#8b1e1e; font-size:12px; font-weight:800;">${label5}</h4>
             <p style="margin:0; font-size:12px;">${data.homework ? data.homework.replace(/\n/g, '<br>') : 'لا يوجد واجب صفي مقرر'}</p>
         </div>
         <div style="margin-bottom: 12px; border-right: 3px solid #64748b; padding-right:10px;">
-            <h4 style="margin:0 0 3px 0; color:#64748b; font-size:12px; font-weight:800;">ملاحظات تربوية وتأملات إضافية</h4>
+            <h4 style="margin:0 0 3px 0; color:#64748b; font-size:12px; font-weight:800;">${label6}</h4>
             <p style="margin:0; font-size:12px;">${data.notes ? data.notes.replace(/\n/g, '<br>') : 'لا توجد ملاحظات إضافية'}</p>
         </div>
     `;

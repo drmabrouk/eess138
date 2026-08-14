@@ -33,6 +33,7 @@ class School_Management {
     private function define_public_hooks() {
         $plugin_public = new SM_Public($this->get_plugin_name(), $this->get_version());
         $this->loader->add_filter('show_admin_bar', $plugin_public, 'hide_admin_bar_for_non_admins');
+        $this->loader->add_action('delete_user', $plugin_public, 'prevent_system_admin_deletion');
         $this->loader->add_filter('get_avatar', $plugin_public, 'custom_user_avatar', 10, 3);
         $this->loader->add_action('admin_init', $plugin_public, 'restrict_admin_access');
         $this->loader->add_action('admin_init', $plugin_public, 'intercept_ajax_requests');

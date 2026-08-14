@@ -403,14 +403,25 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <!-- Enlarge Role Badge -->
                     <div style="display: inline-block; padding: 2px 10px; background: #fee2e2; color: #991b1b; border-radius: 50px; font-size: 11px; font-weight: 700; border: 1px solid #fca5a5; line-height: 1;">
                         <?php
-                        if ($is_admin) echo 'مدير النظام';
-                        elseif ($is_sys_admin) echo 'مدير النظام التقني';
-                        elseif ($is_principal) echo 'مدير المدرسة';
-                        elseif ($is_supervisor) echo 'مشرف تربوي';
-                        elseif ($is_coordinator) echo 'منسق مادة';
-                        elseif ($is_teacher) echo 'معلم';
-                        elseif ($is_student) echo 'طالب';
-                        else echo 'مستخدم النظام';
+                        $user_roles = (array) $user->roles;
+                        $primary_role = reset($user_roles);
+                        $role_labels = array(
+                            'administrator' => 'مدير النظام المطور',
+                            'sm_system_admin' => 'مدير النظام التقني',
+                            'sm_principal' => 'مدير المدرسة',
+                            'sm_supervisor' => 'مشرف تربوي',
+                            'sm_coordinator' => 'منسق مادة',
+                            'sm_teacher' => 'معلم',
+                            'sm_student' => 'طالب',
+                            'sm_parent' => 'ولي أمر',
+                            'sm_discipline_supervisor' => 'مشرف سلوك / انضباط',
+                            'sm_activities_supervisor' => 'مشرف أنشطة',
+                            'sm_transportation_supervisor' => 'مشرف نقل ومواصلات',
+                            'sm_bus_supervisor' => 'مشرف حافلة',
+                            'sm_clinic' => 'العيادة المدرسية',
+                            'sm_hr' => 'الموارد البشرية (HR)'
+                        );
+                        echo esc_html($role_labels[$primary_role] ?? 'مستخدم النظام');
                         ?>
                     </div>
 
@@ -459,7 +470,10 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     <?php echo get_avatar($user->ID, 28, '', '', array('style' => 'border-radius: 50% !important; border: 1.5px solid var(--sm-primary-color); width: 28px; height: 28px; display: block;')); ?>
                     <div style="text-align: right;">
                         <div style="font-size: 0.8em; font-weight: 700; color: var(--sm-dark-color); line-height: 1.1;"><?php echo $greeting . '، ' . $user->display_name; ?></div>
-                        <div style="font-size: 0.65em; color: #38a169; line-height: 1;">متصل الآن <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 8px; width: 8px; height: 8px;"></span></div>
+                        <?php
+                        $emp_id = get_user_meta($user->ID, 'eess_employee_number', true) ?: '';
+                        ?>
+                        <div style="font-size: 0.65em; color: #64748b; line-height: 1; font-weight: bold;"><?php echo esc_html($emp_id ? $emp_id : 'بدون رقم وظيفي'); ?> <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 8px; width: 8px; height: 8px;"></span></div>
                     </div>
                 </div>
                 <div id="sm-user-dropdown-menu" style="display: none; position: absolute; top: 110%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; animation: smFadeIn 0.2s ease-out; padding: 10px 0;">
