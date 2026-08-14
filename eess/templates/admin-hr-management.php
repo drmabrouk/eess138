@@ -711,8 +711,23 @@ if (isset($_GET['manage_employee_id'])) {
                             <input type="text" name="employee_number" class="sm-input" placeholder="EESS-00000" style="height: 38px;">
                         </div>
                         <div class="sm-form-group">
-                            <label class="sm-label" style="font-size: 11px;">المؤسسة / المدرسة المنتسب لها:</label>
-                            <input type="text" name="institution" class="sm-input" placeholder="اسم المدرسة أو الإدارة" style="height: 38px;">
+                            <label class="sm-label" style="font-size: 11px;">الجهة التي يعمل بها (المؤسسة / المدرسة):</label>
+                            <select name="institution" class="sm-select" style="height: 38px; padding: 0 10px;">
+                                <option value="">-- اختر الجهة التي يعمل بها --</option>
+                                <?php
+                                $all_insts = EESS_Org_Helper::get_institutions();
+                                foreach ($all_insts as $inst): ?>
+                                    <optgroup label="🏢 <?php echo esc_attr($inst->name); ?>">
+                                        <option value="inst_<?php echo $inst->id; ?>">🏢 جميع المدارس التابعة لـ (<?php echo esc_html($inst->name); ?>)</option>
+                                        <?php
+                                        global $wpdb;
+                                        $schs = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}eess_schools WHERE institution_id = %d ORDER BY name ASC", $inst->id));
+                                        foreach ($schs as $sch): ?>
+                                            <option value="<?php echo $sch->id; ?>">🏫 <?php echo esc_html($sch->name); ?></option>
+                                        <?php endforeach; ?>
+                                    </optgroup>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
                         <div class="sm-form-group">
                             <label class="sm-label" style="font-size: 11px;">القسم التابع له:</label>

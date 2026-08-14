@@ -102,11 +102,27 @@ class EESS_Org_Helper {
         $departments = array();
 
         foreach ($assignments as $asn) {
-            if ($asn->school_id) $schools[] = intval($asn->school_id);
+            if ($asn->institution_id && (!$asn->school_id || $asn->school_id == 0)) {
+                // Main Institution Scope -> Expand to all child schools under this institution
+                $child_schools = $wpdb->get_col($wpdb->prepare("SELECT id FROM {$wpdb->prefix}eess_schools WHERE institution_id = %d AND status='active'", $asn->institution_id));
+                if (!empty($child_schools)) {
+                    foreach ($child_schools as $csid) $schools[] = intval($csid);
+                }
+            } elseif ($asn->school_id) {
+                $schools[] = intval($asn->school_id);
+            }
             if ($asn->grade_id) $grades[] = intval($asn->grade_id);
             if ($asn->class_id) $classes[] = intval($asn->class_id);
             if ($asn->subject_id) $subjects[] = intval($asn->subject_id);
             if ($asn->department_id) $departments[] = intval($asn->department_id);
+        }
+
+        // Fallback to user_meta 'eess_school_id' if assignments table is empty
+        if (empty($schools)) {
+            $meta_school_id = get_user_meta($user_id, 'eess_school_id', true);
+            if ($meta_school_id) {
+                $schools[] = intval($meta_school_id);
+            }
         }
 
         return array(

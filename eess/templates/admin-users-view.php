@@ -416,13 +416,21 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                     <input type="text" name="employee_number" class="sm-input" placeholder="EESS-00000">
                 </div>
                 <div class="sm-form-group">
-                    <label class="sm-label">المدرسة المنتسب لها / المؤسسة:</label>
+                    <label class="sm-label">الجهة التي يعمل بها (المؤسسة / المدرسة):</label>
                     <select name="institution" class="sm-select" required>
-                        <option value="">-- اختر المدرسة --</option>
+                        <option value="">-- اختر الجهة التي يعمل بها --</option>
                         <?php
-                        $all_registered_schools = EESS_Org_Helper::get_schools();
-                        foreach ($all_registered_schools as $sch): ?>
-                            <option value="<?php echo $sch->id; ?>"><?php echo esc_html($sch->name); ?></option>
+                        $all_insts = EESS_Org_Helper::get_institutions();
+                        foreach ($all_insts as $inst): ?>
+                            <optgroup label="🏢 <?php echo esc_attr($inst->name); ?>">
+                                <option value="inst_<?php echo $inst->id; ?>">🏢 جميع المدارس التابعة لـ (<?php echo esc_html($inst->name); ?>)</option>
+                                <?php
+                                global $wpdb;
+                                $schs = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}eess_schools WHERE institution_id = %d ORDER BY name ASC", $inst->id));
+                                foreach ($schs as $sch): ?>
+                                    <option value="<?php echo $sch->id; ?>">🏫 <?php echo esc_html($sch->name); ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -497,11 +505,19 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                     <input type="text" name="employee_number" id="edit_u_emp" class="sm-input">
                 </div>
                 <div class="sm-form-group">
-                    <label class="sm-label">المدرسة المنتسب لها / المؤسسة:</label>
+                    <label class="sm-label">الجهة التي يعمل بها (المؤسسة / المدرسة):</label>
                     <select name="institution" id="edit_u_inst" class="sm-select" required>
-                        <option value="">-- اختر المدرسة --</option>
-                        <?php foreach ($all_registered_schools as $sch): ?>
-                            <option value="<?php echo $sch->id; ?>"><?php echo esc_html($sch->name); ?></option>
+                        <option value="">-- اختر الجهة التي يعمل بها --</option>
+                        <?php
+                        foreach ($all_insts as $inst): ?>
+                            <optgroup label="🏢 <?php echo esc_attr($inst->name); ?>">
+                                <option value="inst_<?php echo $inst->id; ?>">🏢 جميع المدارس التابعة لـ (<?php echo esc_html($inst->name); ?>)</option>
+                                <?php
+                                $schs = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}eess_schools WHERE institution_id = %d ORDER BY name ASC", $inst->id));
+                                foreach ($schs as $sch): ?>
+                                    <option value="<?php echo $sch->id; ?>">🏫 <?php echo esc_html($sch->name); ?></option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         <?php endforeach; ?>
                     </select>
                 </div>
