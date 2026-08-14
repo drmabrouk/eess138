@@ -892,6 +892,16 @@ class SM_Settings {
             return false;
         }
 
+        // Permanent protections for the root System Administrator (info@eess.online)
+        if ($user->user_email === 'info@eess.online') {
+            return false;
+        }
+
+        // Restrict System Administrator role to info@eess.online only
+        if ($new_role === 'sm_system_admin' || $new_role === 'administrator') {
+            return false;
+        }
+
         // 1. Set authoritative WordPress role (which strips old roles)
         $user->set_role($new_role);
 
