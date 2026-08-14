@@ -467,7 +467,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 
             <div class="sm-user-dropdown" style="position: relative;">
                 <div class="sm-user-profile-nav" onclick="smToggleUserDropdown()" style="display: flex; align-items: center; gap: 8px; background: white; padding: 4px 10px; border-radius: 50px; border: 1px solid var(--sm-border-color); cursor: pointer;">
-                    <?php echo get_avatar($user->ID, 28, '', '', array('style' => 'border-radius: 50% !important; border: 1.5px solid var(--sm-primary-color); width: 28px; height: 28px; display: block;')); ?>
+                    <div style="width: 28px; height: 28px; min-width: 28px; min-height: 28px; max-width: 28px; max-height: 28px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--sm-primary-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box;">
+                        <?php echo get_avatar($user->ID, 28, '', '', array('style' => 'width: 28px !important; height: 28px !important; max-width: 28px !important; max-height: 28px !important; border-radius: 50% !important; object-fit: cover !important; display: block !important; margin: 0 !important; padding: 0 !important;')); ?>
+                    </div>
                     <div style="text-align: right;">
                         <div style="font-size: 0.8em; font-weight: 700; color: var(--sm-dark-color); line-height: 1.1;"><?php echo $greeting . '، ' . $user->display_name; ?></div>
                         <?php
@@ -478,9 +480,14 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 </div>
                 <div id="sm-user-dropdown-menu" style="display: none; position: absolute; top: 110%; left: 0; background: white; border: 1px solid var(--sm-border-color); border-radius: 8px; width: 260px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000; animation: smFadeIn 0.2s ease-out; padding: 10px 0;">
                     <div id="sm-profile-view">
-                        <div style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px;">
-                            <div style="font-weight: 800; color: var(--sm-dark-color);"><?php echo $user->display_name; ?></div>
-                            <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo $user->user_email; ?></div>
+                        <div style="padding: 10px 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 36px; height: 36px; min-width: 36px; min-height: 36px; max-width: 36px; max-height: 36px; border-radius: 50%; overflow: hidden; border: 1.5px solid var(--sm-primary-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-sizing: border-box;">
+                                <?php echo get_avatar($user->ID, 36, '', '', array('style' => 'width: 36px !important; height: 36px !important; max-width: 36px !important; max-height: 36px !important; border-radius: 50% !important; object-fit: cover !important; display: block !important; margin: 0 !important; padding: 0 !important;')); ?>
+                            </div>
+                            <div>
+                                <div style="font-weight: 800; color: var(--sm-dark-color); font-size: 12px;"><?php echo $user->display_name; ?></div>
+                                <div style="font-size: 11px; color: var(--sm-text-gray);"><?php echo $user->user_email; ?></div>
+                            </div>
                         </div>
                         <?php if (!$is_student && !$is_parent): ?>
                             <a href="javascript:smEditProfile()" class="sm-dropdown-item"><span class="dashicons dashicons-edit"></span> تعديل البيانات الشخصية</a>
