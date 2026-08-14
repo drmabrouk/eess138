@@ -122,7 +122,6 @@ class School_Management {
 
         // Print / PDF action
         $this->loader->add_action('wp_ajax_sm_print', $plugin_public, 'ajax_sm_print');
-        $this->loader->add_action('wp_ajax_nopriv_sm_print', $plugin_public, 'ajax_sm_print');
 
         // Admin approval actions
         $this->loader->add_action('wp_ajax_eess_approve_user', $plugin_public, 'ajax_approve_user');

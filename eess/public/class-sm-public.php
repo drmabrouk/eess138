@@ -146,30 +146,47 @@ class SM_Public {
         if ($user_id) {
             $custom_avatar = get_user_meta($user_id, 'eess_profile_photo', true);
             if (empty($custom_avatar)) {
-                $custom_avatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8' style='background:%23f1f5f9; border-radius:50%;'><path d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/></svg>";
+                $custom_avatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk0YTMiIHN0eWxlPSJiYWNrZ3JvdW5kOiNmMWY1Zjk7IGJvcmRlci1yYWRpdXM6NTAlOyI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==";
             }
 
             $class_val = isset($args['class']) ? (is_array($args['class']) ? implode(' ', $args['class']) : $args['class']) : '';
             $style = isset($args['style']) ? $args['style'] : '';
 
-            // Ensure style is perfectly circular
-            if (empty($style)) {
-                $style = 'border-radius: 50% !important; object-fit: cover !important;';
-            } else {
-                $style = rtrim($style, ';') . '; border-radius: 50% !important; object-fit: cover !important;';
+            $width = isset($args['width']) ? (int)$args['width'] : 96;
+            $height = isset($args['height']) ? (int)$args['height'] : 96;
+
+            $style_rules = array(
+                'width' => $width . 'px !important',
+                'height' => $height . 'px !important',
+                'min-width' => $width . 'px !important',
+                'min-height' => $height . 'px !important',
+                'max-width' => $width . 'px !important',
+                'max-height' => $height . 'px !important',
+                'border-radius' => '50% !important',
+                'object-fit' => 'cover !important',
+                'display' => 'inline-block !important',
+                'vertical-align' => 'middle !important',
+                'margin' => '0 !important',
+                'padding' => '0 !important',
+                'box-sizing' => 'border-box !important'
+            );
+
+            $custom_styles = '';
+            foreach ($style_rules as $prop => $val) {
+                $custom_styles .= esc_attr($prop) . ': ' . $val . '; ';
+            }
+            if (!empty($style)) {
+                $custom_styles .= $style;
             }
 
             $is_data_uri = (strpos($custom_avatar, 'data:') === 0);
             $avatar_src = $is_data_uri ? $custom_avatar : esc_url($custom_avatar);
 
-            $width = isset($args['width']) ? (int)$args['width'] : 96;
-            $height = isset($args['height']) ? (int)$args['height'] : 96;
-
             $avatar = sprintf(
-                "<img src='%s' class='%s' style='%s' width='%d' height='%d' />",
+                "<img src=\"%s\" class=\"%s\" style=\"%s\" width=\"%d\" height=\"%d\" />",
                 $avatar_src,
                 esc_attr($class_val),
-                esc_attr($style),
+                esc_attr($custom_styles),
                 $width,
                 $height
             );
@@ -4743,6 +4760,10 @@ class SM_Public {
     }
 
     public function ajax_sm_print() {
+        if (!is_user_logged_in()) {
+            wp_die('عفواً، يجب تسجيل الدخول للتمكن من طباعة هذا المستند.');
+        }
+
         $print_type = isset($_GET['print_type']) ? sanitize_key($_GET['print_type']) : '';
         if (empty($print_type)) {
             wp_die('نوع الطباعة غير محدد.');
@@ -4754,6 +4775,15 @@ class SM_Public {
             $prep = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_lesson_preps WHERE id = %d", $prep_id));
             if (!$prep) {
                 wp_die('التحضير غير موجود.');
+            }
+
+            // Lock down print access so only the owner, coordinators, supervisors, or administrators can view it
+            $current_user_id = get_current_user_id();
+            $user_roles = (array) wp_get_current_user()->roles;
+            $is_privileged = in_array('administrator', $user_roles) || in_array('sm_system_admin', $user_roles) || in_array('sm_principal', $user_roles) || in_array('sm_supervisor', $user_roles) || in_array('sm_coordinator', $user_roles);
+
+            if ($prep->teacher_id != $current_user_id && !$is_privileged) {
+                wp_die('عفواً، لا تملك الصلاحيات الكافية لاستعراض أو طباعة هذا التحضير.');
             }
 
             $data = json_decode($prep->lesson_data, true) ?: array();
