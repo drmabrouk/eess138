@@ -8,10 +8,11 @@ $is_sys_admin = in_array('sm_system_admin', $roles);
 $is_principal = in_array('sm_principal', $roles);
 $is_supervisor = in_array('sm_supervisor', $roles);
 $is_coordinator = in_array('sm_coordinator', $roles);
+$is_activities_sup = in_array('sm_activities_supervisor', $roles);
 $is_hr = in_array('sm_hr', $roles) || current_user_can('manage_hr');
 
 // Access security check: Only authorized supervisors can evaluate
-$can_evaluate = $is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || $is_hr;
+$can_evaluate = $is_admin || $is_sys_admin || $is_principal || $is_supervisor || $is_coordinator || $is_hr || $is_activities_sup;
 
 if (!$can_evaluate) {
     echo '<div style="background:#fee2e2; color:#991b1b; padding:15px; border-radius:8px; border:1px solid #fca5a5; font-weight:700; font-family:\'Cairo\'; text-align:center;">🚫 عذراً، لا تمتلك الصلاحيات الكافية للوصول لصفحة تقييم الموظفين.</div>';
