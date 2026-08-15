@@ -364,7 +364,7 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
 
 </div>
 
-<?php include SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
+<?php include_once SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
 <!-- LEGACY MODALS REPLACED -->
 <div id="add-user-modal-legacy" style="display:none;">
     <div class="sm-modal-content" style="max-width: 650px;">
