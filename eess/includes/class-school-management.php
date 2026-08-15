@@ -128,6 +128,11 @@ class School_Management {
         $this->loader->add_action('wp_ajax_eess_reject_user', $plugin_public, 'ajax_reject_user');
         $this->loader->add_action('wp_ajax_eess_save_user_notes', $plugin_public, 'ajax_save_user_notes');
         $this->loader->add_action('wp_ajax_eess_get_user_assignments', $plugin_public, 'ajax_get_user_assignments');
+
+        // Unified User & Employee Modal AJAX Handlers
+        $this->loader->add_action('wp_ajax_eess_check_user_uniqueness', $plugin_public, 'ajax_check_user_uniqueness');
+        $this->loader->add_action('wp_ajax_eess_get_user_unified', $plugin_public, 'ajax_get_user_unified');
+        $this->loader->add_action('wp_ajax_eess_save_user_unified', $plugin_public, 'ajax_save_user_unified');
     }
 
     public function run() {

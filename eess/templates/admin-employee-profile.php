@@ -625,6 +625,7 @@ if (!is_array($timeline)) $timeline = json_decode($timeline, true) ?: array();
 
 </div>
 
+<?php include SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
 <!-- Interactive Modal for Editing Employee Profile with Instant System Sync -->
 <div id="eessProfileEditModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99999; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(2px);">
     <div style="background: #fff; width: 100%; max-width: 650px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
@@ -728,7 +729,7 @@ function switchEmployeeProfileTab(tabId, btn) {
 
 // Modal Toggle Utilities
 function eessOpenProfileEditModal() {
-    document.getElementById('eessProfileEditModal').style.display = 'flex';
+    eessOpenUnifiedUserModal('edit_employee_profile', <?php echo $emp->ID; ?>);
 }
 function eessCloseProfileEditModal() {
     document.getElementById('eessProfileEditModal').style.display = 'none';

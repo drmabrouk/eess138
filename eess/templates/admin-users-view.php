@@ -274,7 +274,7 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                             </td>
                             <td>
                                 <div style="display:flex; gap:8px; justify-content: flex-end;">
-                                    <button onclick='editSmGenericUser(<?php echo json_encode($u_data); ?>)' class="sm-btn sm-btn-outline" style="padding:4px 10px; width:auto; font-size:11px; height: 28px;">تعديل</button>
+                                    <button onclick='eessOpenUnifiedUserModal("edit_user", <?php echo $u->ID; ?>)' class="sm-btn sm-btn-outline" style="padding:4px 10px; width:auto; font-size:11px; height: 28px;">تعديل</button>
                                     <?php if ($u->ID != get_current_user_id()): ?>
                                         <form method="post" style="display:inline;" onsubmit="return confirm('حذف هذا المستخدم نهائياً؟')">
                                             <?php wp_nonce_field('sm_user_action', 'sm_nonce'); ?>
@@ -364,8 +364,9 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
 
 </div>
 
-<!-- ADD USER MODAL -->
-<div id="add-user-modal" class="sm-modal-overlay">
+<?php include SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
+<!-- LEGACY MODALS REPLACED -->
+<div id="add-user-modal-legacy" style="display:none;">
     <div class="sm-modal-content" style="max-width: 650px;">
         <div class="sm-modal-header">
             <h3>إضافة مستخدم جديد للنظام</h3>
