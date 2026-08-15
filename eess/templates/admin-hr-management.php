@@ -195,7 +195,7 @@ $role_map = array(
 
 // HANDLE SUBMISSIONS AND HR MUTATIONS
 $status_message = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eess_hr_action']) && wp_verify_nonce($_POST['eess_hr_nonce'], 'eess_hr_action_nonce')) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['eess_hr_action']) && wp_verify_nonce($_POST['eess_hr_nonce'], 'eess_hr_action_nonce')) {
     $emp_id = intval($_POST['target_employee_id']);
     $action_type = sanitize_text_field($_POST['eess_hr_action']);
 

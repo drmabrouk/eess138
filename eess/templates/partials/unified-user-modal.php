@@ -146,14 +146,14 @@ $departments  = class_exists('SM_Settings') ? SM_Settings::get_departments() : a
                             <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">رتبة ووظيفة الموظف <span style="color:#ef4444;">*</span></label>
                             <select name="user_role" id="u_user_role" class="sm-select" onchange="eessOnRoleChanged()" required style="height: 34px; font-size: 12px; font-weight: bold;">
                                 <option value="">-- اختر الرتبة الوظيفية --</option>
-                                <option value="teachers">معلم / عضو هيئة تدريس</option>
+                                <option value="sm_teacher">معلم / عضو هيئة تدريس</option>
                                 <option value="sm_hod">رئيس قسم (HOD)</option>
-                                <option value="school_manager">مدير مدرسة / القائد التربوي</option>
-                                <option value="educational_supervisor">موجه / مشرف تربوي</option>
+                                <option value="sm_principal">مدير مدرسة / القائد التربوي</option>
+                                <option value="sm_supervisor">موجه / مشرف تربوي</option>
                                 <option value="sm_activities_supervisor">مشرف أنشطة وفعاليات</option>
                                 <option value="sm_academic_advisor">المرشد الأكاديمي / الموجه الطلابي</option>
-                                <option value="clinic">طبيب / زائر صحي للمدرسة</option>
-                                <option value="accountant">محاسب / مسؤول مالي</option>
+                                <option value="sm_clinic">طبيب / زائر صحي للمدرسة</option>
+                                <option value="sm_accountant">محاسب / مسؤول مالي</option>
                                 <option value="administrator">مدير النظام (System Administrator)</option>
                             </select>
                             <span class="eess-field-error" id="err_u_user_role" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى تحديد الرتبة الوظيفية.</span>

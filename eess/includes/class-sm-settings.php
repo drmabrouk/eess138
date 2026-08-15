@@ -150,6 +150,45 @@ class SM_Settings {
         );
     }
 
+    public static function get_subjects() {
+        if (class_exists('SM_DB')) {
+            $subjs = SM_DB::get_subjects();
+            $out = array();
+            if (!empty($subjs) && is_array($subjs)) {
+                foreach ($subjs as $s) {
+                    if (isset($s->id) && isset($s->name)) {
+                        $out[$s->id] = $s->name;
+                    }
+                }
+            }
+            if (!empty($out)) return $out;
+        }
+        return array(
+            'arabic' => 'اللغة العربية',
+            'english' => 'اللغة الإنجليزية',
+            'math' => 'الرياضيات',
+            'science' => 'العلوم',
+            'islamic' => 'التربية الإسلامية',
+            'social' => 'الدراسات الاجتماعية',
+            'pe' => 'التربية البدنية والرياضية',
+            'art' => 'التربية الفنية',
+            'music' => 'التربية الموسيقية',
+            'computer' => 'الحاسوب والتكنولوجيا'
+        );
+    }
+
+    public static function get_departments() {
+        return array(
+            'academic' => 'الشؤون الأكاديمية والتعليمية',
+            'hr' => 'إدارة الموارد البشرية (HR)',
+            'student_affairs' => 'شؤون الطلاب والانضباط',
+            'activities' => 'الأنشطة المدرسية والفعاليات',
+            'finance' => 'الشؤون المالية والمحاسبة',
+            'services' => 'الخدمات المساندة والنقل',
+            'medical' => 'العيادة والرعاية الصحية'
+        );
+    }
+
     public static function get_suggested_actions() {
         $default = array(
             'low' => "تنبيه شفوي\nتسجيل ملاحظة\nنصيحة تربوية",
