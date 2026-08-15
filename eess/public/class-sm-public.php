@@ -4859,4 +4859,230 @@ class SM_Public {
             wp_die('نوع الطباعة غير مدعوم.');
         }
     }
+
+    /**
+     * UNIFIED USER & EMPLOYEE MODAL AJAX HANDLERS
+     */
+    public function ajax_check_user_uniqueness() {
+        check_ajax_referer('sm_user_action', 'sm_nonce');
+        if (!current_user_can('manage_options') && !current_user_can('edit_users')) {
+            wp_send_json_error('عذراً، لا تمتلك الصلاحية لهذه العملية.');
+        }
+
+        $field   = sanitize_text_field($_POST['field'] ?? '');
+        $value   = sanitize_text_field($_POST['value'] ?? '');
+        $user_id = intval($_POST['user_id'] ?? 0);
+
+        if (empty($field) || empty($value)) {
+            wp_send_json_success(array('exists' => false));
+        }
+
+        if ($field === 'username') {
+            $user = get_user_by('login', $value);
+            if ($user && $user->ID !== $user_id) {
+                wp_send_json_success(array('exists' => true, 'message' => 'اسم المستخدم مستخدم بالفعل لنظام آخر.'));
+            }
+        } elseif ($field === 'email') {
+            $user = get_user_by('email', $value);
+            if ($user && $user->ID !== $user_id) {
+                wp_send_json_success(array('exists' => true, 'message' => 'البريد الإلكتروني مسجل لمستخدم آخر.'));
+            }
+        } elseif ($field === 'employee_id') {
+            $existing = get_users(array(
+                'meta_key'     => 'sm_employee_id',
+                'meta_value'   => $value,
+                'number'       => 1,
+                'exclude'      => array($user_id),
+                'fields'       => 'ID'
+            ));
+            if (!empty($existing)) {
+                wp_send_json_success(array('exists' => true, 'message' => 'الرقم الوظيفي (ID) مخصص لموظف آخر.'));
+            }
+        }
+
+        wp_send_json_success(array('exists' => false));
+    }
+
+    public function ajax_get_user_unified() {
+        check_ajax_referer('sm_user_action', 'sm_nonce');
+        if (!current_user_can('manage_options') && !current_user_can('edit_users')) {
+            wp_send_json_error('غير مصرح لك بعرض بيانات هذا المستخدم.');
+        }
+
+        $user_id = intval($_POST['user_id'] ?? 0);
+        $user = get_userdata($user_id);
+        if (!$user) {
+            wp_send_json_error('المستخدم غير موجود.');
+        }
+
+        $roles = $user->roles;
+        $role  = !empty($roles) ? reset($roles) : 'teachers';
+
+        $first_name   = get_user_meta($user_id, 'first_name', true) ?: $user->first_name;
+        $last_name    = get_user_meta($user_id, 'last_name', true) ?: $user->last_name;
+        $phone_number = get_user_meta($user_id, 'sm_phone', true) ?: get_user_meta($user_id, 'phone_number', true);
+        $employee_id  = get_user_meta($user_id, 'sm_employee_id', true) ?: get_user_meta($user_id, 'employee_id', true);
+        $user_status  = get_user_meta($user_id, 'sm_user_status', true) ?: 'active';
+        $civil_id     = get_user_meta($user_id, 'eess_civil_id', true);
+        $access_scope = get_user_meta($user_id, 'eess_access_scope', true) ?: 'school';
+
+        $institution_id = get_user_meta($user_id, 'eess_institution_id', true);
+        $school_id      = get_user_meta($user_id, 'eess_school_id', true) ?: get_user_meta($user_id, 'sm_school_id', true);
+        $department     = get_user_meta($user_id, 'department', true) ?: get_user_meta($user_id, 'sm_department', true);
+        $specialization = get_user_meta($user_id, 'specialization', true) ?: get_user_meta($user_id, 'sm_specialization', true);
+        $official_title = get_user_meta($user_id, 'official_title', true);
+
+        $photo_url = get_user_meta($user_id, 'sm_profile_photo_url', true);
+        if (!$photo_url) {
+            $photo_url = get_avatar_url($user_id);
+        }
+
+        wp_send_json_success(array(
+            'id'             => $user_id,
+            'first_name'     => $first_name,
+            'last_name'      => $last_name,
+            'user_login'     => $user->user_login,
+            'user_email'     => $user->user_email,
+            'phone_number'   => $phone_number,
+            'employee_id'    => $employee_id,
+            'user_status'    => $user_status,
+            'civil_id'       => $civil_id,
+            'role'           => $role,
+            'access_scope'   => $access_scope,
+            'institution_id' => $institution_id,
+            'school_id'      => $school_id,
+            'department'     => $department,
+            'specialization' => $specialization,
+            'official_title' => $official_title,
+            'photo_url'      => $photo_url,
+        ));
+    }
+
+    public function ajax_save_user_unified() {
+        check_ajax_referer('sm_user_action', 'sm_nonce');
+        if (!current_user_can('manage_options') && !current_user_can('edit_users')) {
+            wp_send_json_error('عذراً، لا تمتلك صلاحيات تعديل أو إضافة الحسابات.');
+        }
+
+        $user_id     = intval($_POST['user_id'] ?? 0);
+        $first_name  = sanitize_text_field($_POST['first_name'] ?? '');
+        $last_name   = sanitize_text_field($_POST['last_name'] ?? '');
+        $username    = sanitize_user($_POST['username'] ?? '');
+        $email       = sanitize_email($_POST['user_email'] ?? '');
+        $phone       = sanitize_text_field($_POST['phone_number'] ?? '');
+        $employee_id = sanitize_text_field($_POST['employee_id'] ?? '');
+        $user_pass   = $_POST['user_pass'] ?? '';
+        $user_status = sanitize_text_field($_POST['user_status'] ?? 'active');
+        $civil_id    = sanitize_text_field($_POST['civil_id'] ?? '');
+
+        $user_role      = sanitize_text_field($_POST['user_role'] ?? 'teachers');
+        $access_scope   = sanitize_text_field($_POST['access_scope'] ?? 'school');
+        $institution_id = intval($_POST['institution_id'] ?? 0);
+        $school_id      = intval($_POST['school_id'] ?? 0);
+        $department     = sanitize_text_field($_POST['department'] ?? '');
+        $specialization = sanitize_text_field($_POST['specialization'] ?? '');
+        $official_title = sanitize_text_field($_POST['official_title'] ?? '');
+
+        if (empty($first_name) || empty($last_name) || empty($email) || empty($employee_id)) {
+            wp_send_json_error('يرجى استكمال جميع الحقول الأساسية المطلوبة.');
+        }
+
+        $display_name = trim($first_name . ' ' . $last_name);
+
+        if ($user_id > 0) {
+            // Edit User
+            $user_data = array(
+                'ID'           => $user_id,
+                'first_name'   => $first_name,
+                'last_name'    => $last_name,
+                'display_name' => $display_name,
+                'user_email'   => $email,
+            );
+
+            if (!empty($user_pass)) {
+                if (strlen($user_pass) < 6) {
+                    wp_send_json_error('كلمة المرور يجب أن لا تقل عن 6 خانات.');
+                }
+                $user_data['user_pass'] = $user_pass;
+            }
+
+            // Protect root admin account
+            $target_user = get_userdata($user_id);
+            if ($target_user && ($target_user->user_email === 'info@eess.online' || $target_user->user_login === '00000')) {
+                $user_role = 'administrator';
+            }
+
+            $updated = wp_update_user($user_data);
+            if (is_wp_error($updated)) {
+                wp_send_json_error($updated->get_error_message());
+            }
+        } else {
+            // New User
+            if (empty($username) || empty($user_pass)) {
+                wp_send_json_error('يرجى تحديد اسم المستخدم وكلمة المرور للحساب الجديد.');
+            }
+            if (username_exists($username)) {
+                wp_send_json_error('اسم المستخدم مُسجل سابقاً في المنصة.');
+            }
+            if (email_exists($email)) {
+                wp_send_json_error('البريد الإلكتروني مسجل حساب آخر بالمنصة.');
+            }
+
+            $user_id = wp_create_user($username, $user_pass, $email);
+            if (is_wp_error($user_id)) {
+                wp_send_json_error($user_id->get_error_message());
+            }
+
+            wp_update_user(array(
+                'ID'           => $user_id,
+                'first_name'   => $first_name,
+                'last_name'    => $last_name,
+                'display_name' => $display_name,
+            ));
+        }
+
+        // Set Role
+        $u = new WP_User($user_id);
+        $u->set_role($user_role);
+
+        // Synchronize Metadata Across WP Metas and EESS Tables
+        update_user_meta($user_id, 'first_name', $first_name);
+        update_user_meta($user_id, 'last_name', $last_name);
+        update_user_meta($user_id, 'sm_phone', $phone);
+        update_user_meta($user_id, 'phone_number', $phone);
+        update_user_meta($user_id, 'sm_employee_id', $employee_id);
+        update_user_meta($user_id, 'employee_id', $employee_id);
+        update_user_meta($user_id, 'sm_user_status', $user_status);
+        update_user_meta($user_id, 'eess_civil_id', $civil_id);
+        update_user_meta($user_id, 'eess_access_scope', $access_scope);
+        update_user_meta($user_id, 'eess_institution_id', $institution_id);
+        update_user_meta($user_id, 'eess_school_id', $school_id);
+        update_user_meta($user_id, 'sm_school_id', $school_id);
+        update_user_meta($user_id, 'department', $department);
+        update_user_meta($user_id, 'sm_department', $department);
+        update_user_meta($user_id, 'specialization', $specialization);
+        update_user_meta($user_id, 'sm_specialization', $specialization);
+        update_user_meta($user_id, 'official_title', $official_title);
+
+        // Handle Profile Photo Upload if present
+        if (!empty($_FILES['profile_photo']['name'])) {
+            require_once(ABSPATH . 'wp-admin/includes/image.php');
+            require_once(ABSPATH . 'wp-admin/includes/file.php');
+            require_once(ABSPATH . 'wp-admin/includes/media.php');
+
+            $attachment_id = media_handle_upload('profile_photo', 0);
+            if (!is_wp_error($attachment_id)) {
+                $photo_url = wp_get_attachment_url($attachment_id);
+                update_user_meta($user_id, 'sm_profile_photo_id', $attachment_id);
+                update_user_meta($user_id, 'sm_profile_photo_url', $photo_url);
+            }
+        }
+
+        SM_Logger::log('حفظ وتزامن حساب موظف', "تم حفظ بيانات وتزامن الحساب للموظف $display_name (ID: $user_id)");
+
+        wp_send_json_success(array(
+            'message' => 'تم حفظ وتزامن بيانات الموظف بنجاح في قاعدة البيانات والأنظمة المرتبطة.',
+            'user_id' => $user_id
+        ));
+    }
 }
