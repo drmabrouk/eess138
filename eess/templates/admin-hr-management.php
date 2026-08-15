@@ -759,7 +759,7 @@ if (isset($_GET['manage_employee_id'])) {
             </div>
         </div>
 
-        <?php include SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
+        <?php include_once SM_PLUGIN_DIR . 'templates/partials/unified-user-modal.php'; ?>
         <script>
         function eessOpenAddEmployeeModal() {
             eessOpenUnifiedUserModal('add_employee', 0);
