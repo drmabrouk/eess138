@@ -21,6 +21,10 @@ $hierarchy = array(
 );
 $current_level = $hierarchy[$current_role] ?? -3;
 
+$all_registered_schools = class_exists('EESS_Org_Helper') ? EESS_Org_Helper::get_schools() : array();
+$all_subjects = class_exists('SM_DB') ? SM_DB::get_subjects() : array();
+$unique_subjects = !empty($all_subjects) ? array_unique(array_map(function($s){ return is_object($s) ? $s->name : $s; }, $all_subjects)) : array();
+
 // Fetch all users
 $all_users = get_users();
 

@@ -250,13 +250,13 @@ window.eessOnRoleChanged = function() {
     var subjWrapper = document.getElementById('u_subject_wrapper');
     var deptWrapper = document.getElementById('u_department_wrapper');
 
-    if (role === 'teachers' || role === 'sm_hod') {
+    if (role === 'sm_teacher' || role === 'teachers' || role === 'sm_hod') {
         if (subjWrapper) subjWrapper.style.display = 'block';
     } else {
         if (subjWrapper) subjWrapper.style.display = 'none';
     }
 
-    if (role === 'school_manager' || role === 'administrator') {
+    if (role === 'sm_principal' || role === 'school_manager' || role === 'administrator') {
         if (deptWrapper) deptWrapper.style.display = 'none';
     } else {
         if (deptWrapper) deptWrapper.style.display = 'block';
@@ -316,7 +316,14 @@ window.eessLoadUserData = function(userId) {
             document.getElementById('u_employee_id').value = u.employee_id || '';
             document.getElementById('u_user_status').value = u.user_status || 'active';
             document.getElementById('u_civil_id').value = u.civil_id || '';
-            document.getElementById('u_user_role').value = u.role || 'teachers';
+            var normalizedRole = u.role || 'sm_teacher';
+            if (normalizedRole === 'teachers') normalizedRole = 'sm_teacher';
+            if (normalizedRole === 'school_manager') normalizedRole = 'sm_principal';
+            if (normalizedRole === 'educational_supervisor') normalizedRole = 'sm_supervisor';
+            if (normalizedRole === 'clinic') normalizedRole = 'sm_clinic';
+            if (normalizedRole === 'accountant') normalizedRole = 'sm_accountant';
+
+            document.getElementById('u_user_role').value = normalizedRole;
             document.getElementById('u_access_scope').value = u.access_scope || 'school';
             document.getElementById('u_institution_id').value = u.institution_id || '';
             document.getElementById('u_school_id').value = u.school_id || '';

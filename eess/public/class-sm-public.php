@@ -123,7 +123,7 @@ class SM_Public {
         return false;
     }
 
-    public function custom_user_avatar($avatar, $id_or_email, $args) {
+    public function custom_user_avatar($avatar, $id_or_email, $args = null) {
         $user_id = 0;
         if (is_numeric($id_or_email)) {
             $user_id = (int)$id_or_email;
@@ -144,16 +144,29 @@ class SM_Public {
         }
 
         if ($user_id) {
-            $custom_avatar = get_user_meta($user_id, 'eess_profile_photo', true);
+            $custom_avatar = get_user_meta($user_id, 'sm_profile_photo_url', true) ?: get_user_meta($user_id, 'eess_profile_photo', true);
             if (empty($custom_avatar)) {
                 $custom_avatar = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzk0YTMiIHN0eWxlPSJiYWNrZ3JvdW5kOiNmMWY1Zjk7IGJvcmRlci1yYWRpdXM6NTAlOyI+PHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPjwvc3ZnPg==";
             }
 
-            $class_val = isset($args['class']) ? (is_array($args['class']) ? implode(' ', $args['class']) : $args['class']) : '';
-            $style = isset($args['style']) ? $args['style'] : '';
+            $size = 96;
+            $class_val = '';
+            $style = '';
 
-            $width = isset($args['width']) ? (int)$args['width'] : 96;
-            $height = isset($args['height']) ? (int)$args['height'] : 96;
+            if (is_array($args)) {
+                $size = isset($args['size']) ? (int)$args['size'] : (isset($args['width']) ? (int)$args['width'] : 96);
+                if (isset($args['class'])) {
+                    $class_val = is_array($args['class']) ? implode(' ', $args['class']) : $args['class'];
+                }
+                if (isset($args['style'])) {
+                    $style = $args['style'];
+                }
+            } elseif (is_numeric($args)) {
+                $size = (int)$args;
+            }
+
+            $width = $size;
+            $height = $size;
 
             $style_rules = array(
                 'width' => $width . 'px !important',
@@ -4975,7 +4988,12 @@ class SM_Public {
         $user_status = sanitize_text_field($_POST['user_status'] ?? 'active');
         $civil_id    = sanitize_text_field($_POST['civil_id'] ?? '');
 
-        $user_role      = sanitize_text_field($_POST['user_role'] ?? 'teachers');
+        $user_role      = sanitize_text_field($_POST['user_role'] ?? 'sm_teacher');
+        if ($user_role === 'teachers') $user_role = 'sm_teacher';
+        if ($user_role === 'school_manager') $user_role = 'sm_principal';
+        if ($user_role === 'educational_supervisor') $user_role = 'sm_supervisor';
+        if ($user_role === 'clinic') $user_role = 'sm_clinic';
+        if ($user_role === 'accountant') $user_role = 'sm_accountant';
         $access_scope   = sanitize_text_field($_POST['access_scope'] ?? 'school');
         $institution_id = intval($_POST['institution_id'] ?? 0);
         $school_id      = intval($_POST['school_id'] ?? 0);

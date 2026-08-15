@@ -14,7 +14,7 @@ if (($is_admin || $is_sys_admin || $is_hr) && isset($_GET['employee_id'])) {
 }
 
 // Handle profile photo upload with HR approval workflow
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['profile_photo_upload'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_FILES['profile_photo_upload'])) {
     if (isset($_POST['eess_photo_nonce']) && wp_verify_nonce($_POST['eess_photo_nonce'], 'eess_profile_photo_upload')) {
         if (!empty($_FILES['profile_photo_upload']['name'])) {
             require_once(ABSPATH . 'wp-admin/includes/file.php');
@@ -64,7 +64,7 @@ $role_map = array(
 );
 
 // Form submission handler for saving/synchronizing account and profile details
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eess_save_profile_action'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['eess_save_profile_action'])) {
     // CSRF Check
     if (!isset($_POST['eess_profile_nonce']) || !wp_verify_nonce($_POST['eess_profile_nonce'], 'eess_save_profile')) {
         wp_die('عذراً، انتهت صلاحية الجلسة. يرجى المحاولة مجدداً.');

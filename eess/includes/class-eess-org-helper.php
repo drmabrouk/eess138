@@ -282,6 +282,10 @@ class EESS_Org_Helper {
         return $wpdb->get_results("SELECT s.*, i.name as institution_name FROM {$wpdb->prefix}eess_schools s LEFT JOIN {$wpdb->prefix}eess_institutions i ON s.institution_id = i.id ORDER BY s.name ASC");
     }
 
+    public static function get_all_schools() {
+        return self::get_schools();
+    }
+
     public static function add_school($inst_id, $name) {
         global $wpdb;
         return $wpdb->insert("{$wpdb->prefix}eess_schools", array('institution_id' => $inst_id, 'name' => $name, 'status' => 'active'));
