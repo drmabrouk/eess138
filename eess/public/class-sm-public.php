@@ -4933,8 +4933,24 @@ class SM_Public {
 
         $first_name   = get_user_meta($user_id, 'first_name', true) ?: $user->first_name;
         $last_name    = get_user_meta($user_id, 'last_name', true) ?: $user->last_name;
-        $phone_number = get_user_meta($user_id, 'sm_phone', true) ?: get_user_meta($user_id, 'phone_number', true);
+        $country_code = get_user_meta($user_id, 'eess_country_code', true) ?: '+971';
+        $full_phone   = get_user_meta($user_id, 'sm_phone', true) ?: get_user_meta($user_id, 'phone_number', true);
+        $phone_number = $full_phone;
+        if (!empty($full_phone)) {
+            foreach (array('+971', '+966', '+965', '+974', '+973', '+968', '+20') as $code) {
+                if (strpos($full_phone, $code) === 0) {
+                    $country_code = $code;
+                    $phone_number = trim(substr($full_phone, strlen($code)));
+                    break;
+                }
+            }
+        }
+
         $employee_id  = get_user_meta($user_id, 'sm_employee_id', true) ?: get_user_meta($user_id, 'employee_id', true);
+        if (empty($employee_id)) {
+            $employee_id = $user->user_login;
+        }
+        $employee_id = trim(preg_replace('/^(EMP|EMP-|_)+/i', '', $employee_id));
         $user_status  = get_user_meta($user_id, 'sm_user_status', true) ?: 'active';
         $civil_id     = get_user_meta($user_id, 'eess_civil_id', true);
         $access_scope = get_user_meta($user_id, 'eess_access_scope', true) ?: 'school';
@@ -4956,6 +4972,7 @@ class SM_Public {
             'last_name'      => $last_name,
             'user_login'     => $user->user_login,
             'user_email'     => $user->user_email,
+            'country_code'   => $country_code,
             'phone_number'   => $phone_number,
             'employee_id'    => $employee_id,
             'user_status'    => $user_status,
@@ -4980,13 +4997,27 @@ class SM_Public {
         $user_id     = intval($_POST['user_id'] ?? 0);
         $first_name  = sanitize_text_field($_POST['first_name'] ?? '');
         $last_name   = sanitize_text_field($_POST['last_name'] ?? '');
-        $username    = sanitize_user($_POST['username'] ?? '');
+        $raw_emp_id  = sanitize_text_field($_POST['employee_id'] ?? '');
+        $country_code = sanitize_text_field($_POST['country_code'] ?? '+971');
+        $raw_phone   = sanitize_text_field($_POST['phone_number'] ?? '');
         $email       = sanitize_email($_POST['user_email'] ?? '');
-        $phone       = sanitize_text_field($_POST['phone_number'] ?? '');
-        $employee_id = sanitize_text_field($_POST['employee_id'] ?? '');
         $user_pass   = $_POST['user_pass'] ?? '';
         $user_status = sanitize_text_field($_POST['user_status'] ?? 'active');
         $civil_id    = sanitize_text_field($_POST['civil_id'] ?? '');
+
+        // Strip prefixes from employee number (e.g., 'EMP-00025' -> '00025')
+        $clean_emp_id = trim(preg_replace('/^(EMP|EMP-|_)+/i', '', trim($raw_emp_id)));
+        if (empty($clean_emp_id)) {
+            $clean_emp_id = trim($raw_emp_id);
+        }
+
+        // Rule: Username MUST EQUAL Employee Number
+        $username    = $clean_emp_id;
+        $employee_id = $clean_emp_id;
+
+        // Combine country code and phone number
+        $clean_phone_body = ltrim($raw_phone, '0');
+        $full_phone = $country_code . ' ' . $clean_phone_body;
 
         $user_role      = sanitize_text_field($_POST['user_role'] ?? 'sm_teacher');
         if ($user_role === 'teachers') $user_role = 'sm_teacher';
@@ -5024,10 +5055,13 @@ class SM_Public {
                 $user_data['user_pass'] = $user_pass;
             }
 
-            // Protect root admin account
+            // Protect root admin account and sync username with employee number
             $target_user = get_userdata($user_id);
             if ($target_user && ($target_user->user_email === 'info@eess.online' || $target_user->user_login === '00000')) {
                 $user_role = 'administrator';
+            } else if ($target_user && $target_user->user_login !== $clean_emp_id) {
+                global $wpdb;
+                $wpdb->update($wpdb->users, array('user_login' => $clean_emp_id), array('ID' => $user_id));
             }
 
             $updated = wp_update_user($user_data);
@@ -5066,10 +5100,12 @@ class SM_Public {
         // Synchronize Metadata Across WP Metas and EESS Tables
         update_user_meta($user_id, 'first_name', $first_name);
         update_user_meta($user_id, 'last_name', $last_name);
-        update_user_meta($user_id, 'sm_phone', $phone);
-        update_user_meta($user_id, 'phone_number', $phone);
-        update_user_meta($user_id, 'sm_employee_id', $employee_id);
-        update_user_meta($user_id, 'employee_id', $employee_id);
+        update_user_meta($user_id, 'eess_country_code', $country_code);
+        update_user_meta($user_id, 'sm_phone', $full_phone);
+        update_user_meta($user_id, 'phone_number', $full_phone);
+        update_user_meta($user_id, 'sm_employee_id', $clean_emp_id);
+        update_user_meta($user_id, 'employee_id', $clean_emp_id);
+        update_user_meta($user_id, 'eess_employee_number', $clean_emp_id);
         update_user_meta($user_id, 'sm_user_status', $user_status);
         update_user_meta($user_id, 'eess_civil_id', $civil_id);
         update_user_meta($user_id, 'eess_access_scope', $access_scope);
