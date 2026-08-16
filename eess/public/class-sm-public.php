@@ -5230,6 +5230,13 @@ class SM_Public {
             $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}sm_lesson_preps SET status = 'approved', reviewed_by = %d, reviewed_at = %s WHERE id IN ($placeholders)", array_merge(array($user_id, current_time('mysql')), $prep_ids)));
             wp_send_json_success(array('message' => 'تم اعتماد التحضيرات المحددة بنجاح.'));
         } elseif ($bulk_action === 'delete') {
+            if (!$can_review) {
+                // If not reviewer/admin, ensure all requested prep IDs belong to current teacher
+                $owner_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}sm_lesson_preps WHERE id IN ($placeholders) AND teacher_id = %d", array_merge($prep_ids, array($user_id))));
+                if ($owner_count < count($prep_ids)) {
+                    wp_send_json_error('عذراً، لا تمتلك صلاحيات حذف بعض أو كل التحضيرات المحددة.');
+                }
+            }
             $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->prefix}sm_lesson_preps WHERE id IN ($placeholders)", $prep_ids));
             wp_send_json_success(array('message' => 'تم حذف التحضيرات المحددة نهائياً.'));
         }

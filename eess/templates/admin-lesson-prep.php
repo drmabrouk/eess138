@@ -87,7 +87,7 @@ if (isset($_POST['eess_save_lesson_prep']) && wp_verify_nonce($_POST['eess_lesso
     if ($status === 'submitted') {
         $submission_time = current_time('mysql');
         $submit_timestamp = strtotime($submission_time);
-        $deadline_today = strtotime(date('Y-m-d', $submit_timestamp) . ' ' . $deadline_time);
+        $deadline_for_lesson = strtotime($lesson_date . ' ' . $deadline_time);
 
         // Exemption check for PE (English/Arabic matching)
         $is_pe = (strpos(strtolower($subject), 'رياضية') !== false || strpos(strtolower($subject), 'بدنية') !== false || strpos(strtolower($subject), 'pe') !== false || strpos(strtolower($subject), 'physical') !== false);
@@ -98,8 +98,8 @@ if (isset($_POST['eess_save_lesson_prep']) && wp_verify_nonce($_POST['eess_lesso
             $exempt = true;
         }
 
-        if ($submit_timestamp > $deadline_today && !$exempt) {
-            $delay_seconds = $submit_timestamp - $deadline_today;
+        if ($submit_timestamp > $deadline_for_lesson && !$exempt) {
+            $delay_seconds = $submit_timestamp - $deadline_for_lesson;
             $final_status = 'late';
         } else {
             $final_status = 'submitted';
@@ -1368,7 +1368,7 @@ $prep_report_weekly = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_les
 $prep_report_monthly = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_lesson_preps WHERE MONTH(lesson_date) = MONTH(CURDATE()) AND YEAR(lesson_date) = YEAR(CURDATE())") ?: 0;
 
 $prep_report_ranking = $wpdb->get_results("SELECT p.teacher_id, u.display_name, COUNT(*) as total, SUM(CASE WHEN p.status = 'approved' THEN 1 ELSE 0 END) as approved_count FROM {$wpdb->prefix}sm_lesson_preps p JOIN {$wpdb->users} u ON p.teacher_id = u.ID GROUP BY p.teacher_id ORDER BY approved_count DESC, total DESC LIMIT 10");
-$prep_report_avg_late = $wpdb->get_var("SELECT AVG(delay_minutes) FROM {$wpdb->prefix}sm_lesson_preps WHERE delay_minutes > 0") ?: 0;
+$prep_report_avg_late = $wpdb->get_var("SELECT AVG(delay_seconds / 60) FROM {$wpdb->prefix}sm_lesson_preps WHERE delay_seconds > 0") ?: 0;
 $prep_report_total_late = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}sm_lesson_preps WHERE status = 'late'") ?: 0;
 ?>
 
