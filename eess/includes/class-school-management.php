@@ -133,6 +133,10 @@ class School_Management {
         $this->loader->add_action('wp_ajax_eess_check_user_uniqueness', $plugin_public, 'ajax_check_user_uniqueness');
         $this->loader->add_action('wp_ajax_eess_get_user_unified', $plugin_public, 'ajax_get_user_unified');
         $this->loader->add_action('wp_ajax_eess_save_user_unified', $plugin_public, 'ajax_save_user_unified');
+
+        // Lesson Prep Quick Actions & Bulk Operations
+        $this->loader->add_action('wp_ajax_eess_quick_approve_prep', $plugin_public, 'ajax_quick_approve_prep');
+        $this->loader->add_action('wp_ajax_eess_bulk_lesson_action', $plugin_public, 'ajax_bulk_lesson_action');
     }
 
     public function run() {

@@ -2772,19 +2772,50 @@ class SM_Public {
         if (!is_user_logged_in()) wp_send_json_error('Unauthorized');
         if (!wp_verify_nonce($_POST['sm_nonce'], 'sm_assignment_action')) wp_send_json_error('Security check');
 
-        $data = array(
-            'sender_id' => get_current_user_id(),
-            'receiver_id' => intval($_POST['receiver_id']),
-            'title' => sanitize_text_field($_POST['title']),
-            'description' => sanitize_textarea_field($_POST['description']),
-            'file_url' => esc_url_raw($_POST['file_url']),
-            'type' => sanitize_text_field($_POST['type'] ?? 'assignment')
-        );
+        $sender_id   = get_current_user_id();
+        $title       = sanitize_text_field($_POST['title'] ?? '');
+        $description = sanitize_textarea_field($_POST['description'] ?? '');
+        $file_url    = esc_url_raw($_POST['file_url'] ?? '');
+        $subject     = sanitize_text_field($_POST['subject'] ?? '');
+        $due_date    = sanitize_text_field($_POST['due_date'] ?? '');
+        $type        = sanitize_text_field($_POST['type'] ?? 'assignment');
 
-        if (SM_DB::add_assignment($data)) {
-            wp_send_json_success();
+        $receivers = array();
+        if (!empty($_POST['receiver_ids'])) {
+            if (is_array($_POST['receiver_ids'])) {
+                $receivers = array_map('intval', $_POST['receiver_ids']);
+            } else {
+                $receivers = array_map('intval', explode(',', $_POST['receiver_ids']));
+            }
+        } elseif (!empty($_POST['receiver_id'])) {
+            $receivers[] = intval($_POST['receiver_id']);
+        }
+
+        $receivers = array_unique(array_filter($receivers));
+
+        if (empty($receivers) || empty($title)) {
+            wp_send_json_error('يرجى تحديد الطلاب المستهدفين وعنوان الواجب.');
+        }
+
+        $success_count = 0;
+        foreach ($receivers as $rec_id) {
+            $data = array(
+                'sender_id'   => $sender_id,
+                'receiver_id' => $rec_id,
+                'title'       => $title . (!empty($subject) ? " [$subject]" : ""),
+                'description' => $description . (!empty($due_date) ? "\n\nتاريخ التسليم: $due_date" : ""),
+                'file_url'    => $file_url,
+                'type'        => $type
+            );
+            if (SM_DB::add_assignment($data)) {
+                $success_count++;
+            }
+        }
+
+        if ($success_count > 0) {
+            wp_send_json_success(array('message' => "تم إرسال الواجب بنجاح إلى $success_count من الطلاب."));
         } else {
-            wp_send_json_error('Failed');
+            wp_send_json_error('فشل إرسال الواجب.');
         }
     }
 
@@ -5138,5 +5169,71 @@ class SM_Public {
             'message' => 'تم حفظ وتزامن بيانات الموظف بنجاح في قاعدة البيانات والأنظمة المرتبطة.',
             'user_id' => $user_id
         ));
+    }
+
+    public function ajax_quick_approve_prep() {
+        check_ajax_referer('eess_lesson_prep_action', 'sm_nonce');
+        $user_id = get_current_user_id();
+        $roles = (array) wp_get_current_user()->roles;
+        $can_review = in_array('administrator', $roles) || in_array('sm_system_admin', $roles) || in_array('sm_principal', $roles) || in_array('sm_supervisor', $roles) || in_array('sm_coordinator', $roles) || in_array('sm_hod', $roles) || current_user_can('manage_options');
+
+        if (!$can_review) {
+            wp_send_json_error('عذراً، لا تمتلك صلاحيات اعتماد خطط التحضير.');
+        }
+
+        $prep_id = intval($_POST['prep_id'] ?? 0);
+        if ($prep_id <= 0) {
+            wp_send_json_error('معرف التحضير غير صحيح.');
+        }
+
+        global $wpdb;
+        $updated = $wpdb->update(
+            "{$wpdb->prefix}sm_lesson_preps",
+            array(
+                'status' => 'approved',
+                'reviewed_by' => $user_id,
+                'reviewed_at' => current_time('mysql'),
+                'review_notes' => 'تم الاعتماد المباشر بواسطة الموجه/رئيس القسم'
+            ),
+            array('id' => $prep_id)
+        );
+
+        if ($updated !== false) {
+            $prep = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}sm_lesson_preps WHERE id = %d", $prep_id));
+            SM_Logger::log('اعتماد تحضير درس', "تم اعتماد التحضير: " . ($prep->title ?? '') . " (ID: $prep_id) بواسطة المستخدم ID: $user_id");
+            wp_send_json_success(array('message' => 'تم اعتماد خطة التحضير بنجاح.', 'prep_id' => $prep_id));
+        } else {
+            wp_send_json_error('فشل في تغيير حالة الاعتماد بالمرئيات.');
+        }
+    }
+
+    public function ajax_bulk_lesson_action() {
+        check_ajax_referer('eess_lesson_prep_action', 'sm_nonce');
+        $user_id = get_current_user_id();
+        $roles = (array) wp_get_current_user()->roles;
+        $can_review = in_array('administrator', $roles) || in_array('sm_system_admin', $roles) || in_array('sm_principal', $roles) || in_array('sm_supervisor', $roles) || in_array('sm_coordinator', $roles) || in_array('sm_hod', $roles) || current_user_can('manage_options');
+
+        $bulk_action = sanitize_text_field($_POST['bulk_action'] ?? '');
+        $prep_ids = !empty($_POST['prep_ids']) ? array_map('intval', (array)$_POST['prep_ids']) : array();
+
+        if (empty($prep_ids) || empty($bulk_action)) {
+            wp_send_json_error('يرجى تحديد العناصر والإجراء الجماعي المطلوب.');
+        }
+
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($prep_ids), '%d'));
+
+        if ($bulk_action === 'approve') {
+            if (!$can_review) {
+                wp_send_json_error('عذراً، لا تمتلك صلاحيات الاعتماد الجماعي.');
+            }
+            $wpdb->query($wpdb->prepare("UPDATE {$wpdb->prefix}sm_lesson_preps SET status = 'approved', reviewed_by = %d, reviewed_at = %s WHERE id IN ($placeholders)", array_merge(array($user_id, current_time('mysql')), $prep_ids)));
+            wp_send_json_success(array('message' => 'تم اعتماد التحضيرات المحددة بنجاح.'));
+        } elseif ($bulk_action === 'delete') {
+            $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->prefix}sm_lesson_preps WHERE id IN ($placeholders)", $prep_ids));
+            wp_send_json_success(array('message' => 'تم حذف التحضيرات المحددة نهائياً.'));
+        }
+
+        wp_send_json_error('إجراء جماعي غير مدعوم.');
     }
 }
