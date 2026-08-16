@@ -234,8 +234,12 @@ window.eessCheckUniqueness = function(field) {
 
     if (!val) return;
 
+    var nonceEl = document.querySelector('#eess-unified-user-form [name="sm_nonce"]');
+    var nonce = nonceEl ? nonceEl.value : '';
+
     var formData = new FormData();
     formData.append('action', 'eess_check_user_uniqueness');
+    formData.append('sm_nonce', nonce);
     formData.append('field', field);
     formData.append('value', val);
     formData.append('user_id', userId);
@@ -308,8 +312,12 @@ window.eessOnSchoolChanged = function() {
 };
 
 window.eessLoadUserData = function(userId) {
+    var nonceEl = document.querySelector('#eess-unified-user-form [name="sm_nonce"]');
+    var nonce = nonceEl ? nonceEl.value : '';
+
     var formData = new FormData();
     formData.append('action', 'eess_get_user_unified');
+    formData.append('sm_nonce', nonce);
     formData.append('user_id', userId);
 
     fetch(eessAjaxUrl, { method: 'POST', body: formData })
