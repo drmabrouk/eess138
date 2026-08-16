@@ -299,10 +299,6 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                 <div style="font-size: 11px; color: #64748b; font-weight: 700; margin-bottom: 3px;">تسليم متأخر</div>
                 <div style="font-size: 18px; font-weight: 800; color: #8b1e1e;"><?php echo $stats_late; ?></div>
             </div>
-            <div class="sm-stat-card" style="border-top: 3px solid #0284c7; text-align: center; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                <div style="font-size: 11px; color: #64748b; font-weight: 700; margin-bottom: 3px;">نسبة الالتزام</div>
-                <div style="font-size: 18px; font-weight: 800; color: #0284c7;"><?php echo $submission_pct; ?>%</div>
-            </div>
         </div>
     </div>
     <?php endif; ?>
@@ -650,7 +646,8 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                                     $delay_desc = implode(' و', $delay_parts);
                                 }
                         ?>
-                        <tr style="font-size: 12px;">
+                        <tr style="font-size: 12px;" id="prep-row-<?php echo $sub->id; ?>">
+                            <td style="text-align: center;"><input type="checkbox" class="eess-prep-cb" value="<?php echo $sub->id; ?>"></td>
                             <td style="font-weight: 700;">
                                 <?php echo date_i18n('Y-m-d', strtotime($sub->lesson_date)); ?>
                                 <?php
@@ -719,42 +716,35 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                                 </span>
                             </td>
                             <td>
-                                <div style="display:flex; gap:4px; flex-wrap: wrap;">
-                                    <!-- View Button -->
-                                    <button onclick="smOpenPrepViewer(<?php echo $sub->id; ?>)" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#0284c7; color: white !important; height: 24px; border:none; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
-                                        <span class="dashicons dashicons-visibility" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
-                                        <span>عرض</span>
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <!-- View Button (Neutral Slate) -->
+                                    <button onclick="smOpenPrepViewer(<?php echo $sub->id; ?>)" class="sm-btn" title="عرض تفاصيل التحضير الكاملة" style="width: 28px; height: 28px; padding: 0; background: #475569; color: white !important; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <span class="dashicons dashicons-visibility" style="font-size: 14px; width: 14px; height: 14px; margin: 0; line-height: 1;"></span>
                                     </button>
 
-                                    <!-- Print Button -->
-                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=lesson_prep&prep_id=' . $sub->id); ?>" target="_blank" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#475569; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
-                                        <span class="dashicons dashicons-printer" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
-                                        <span>طباعة</span>
+                                    <!-- Print PDF Button (Print Blue) -->
+                                    <a href="<?php echo admin_url('admin-ajax.php?action=sm_print&print_type=lesson_prep&prep_id=' . $sub->id); ?>" target="_blank" class="sm-btn" title="طباعة أو تصدير وثيقة PDF المعتمدة" style="width: 28px; height: 28px; padding: 0; background: #0284c7; color: white !important; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
+                                        <span class="dashicons dashicons-printer" style="font-size: 14px; width: 14px; height: 14px; margin: 0; line-height: 1;"></span>
                                     </a>
 
-                                    <?php if ($is_teacher): ?>
-                                        <!-- Edit Button -->
-                                        <?php if ($sub->status === 'draft' || $sub->status === 'revision_required'): ?>
-                                            <a href="<?php echo add_query_arg('edit_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#d97706; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
-                                                <span class="dashicons dashicons-edit" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
-                                                <span>تعديل</span>
-                                            </a>
-                                        <?php endif; ?>
+                                    <?php if ($can_review && ($sub->status === 'submitted' || $sub->status === 'late' || $sub->status === 'resubmitted')): ?>
+                                        <!-- Approve Button (Positive Green) -->
+                                        <button id="btn-approve-<?php echo $sub->id; ?>" onclick="smQuickApprovePrep(<?php echo $sub->id; ?>)" class="sm-btn" title="اعتماد خطة الدرس فوراً" style="width: 28px; height: 28px; padding: 0; background: #16a34a; color: white !important; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                            <span class="dashicons dashicons-yes-alt" style="font-size: 14px; width: 14px; height: 14px; margin: 0; line-height: 1;"></span>
+                                        </button>
+                                    <?php endif; ?>
 
-                                        <!-- Duplicate Button -->
-                                        <a href="<?php echo add_query_arg('duplicate_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#64748b; color: white !important; height: 24px; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; gap:3px; border-radius:4px; border:none; cursor:pointer;">
-                                            <span class="dashicons dashicons-admin-page" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
-                                            <span>تكرار</span>
+                                    <?php if ($is_teacher && ($sub->status === 'draft' || $sub->status === 'revision_required')): ?>
+                                        <!-- Edit Button -->
+                                        <a href="<?php echo add_query_arg('edit_prep_id', $sub->id, home_url('/lesson-prep')); ?>" class="sm-btn" title="تعديل وثيقة التحضير" style="width: 28px; height: 28px; padding: 0; background: #d97706; color: white !important; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; text-decoration: none;">
+                                            <span class="dashicons dashicons-edit" style="font-size: 14px; width: 14px; height: 14px; margin: 0; line-height: 1;"></span>
                                         </a>
                                     <?php endif; ?>
 
-                                    <!-- Approve Button -->
-                                    <?php if ($can_review && ($sub->status === 'submitted' || $sub->status === 'late')): ?>
-                                        <button onclick="smOpenReviewModal(<?php echo $sub->id; ?>, '<?php echo esc_js($sub->title); ?>')" class="sm-btn" style="padding: 0 8px; font-size:11px; width:auto; background:#16a34a; color: white !important; height: 24px; border:none; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; gap:3px; cursor:pointer;">
-                                            <span class="dashicons dashicons-yes" style="font-size: 12px; width: 12px; height: 12px; line-height: 1; margin: 0; color: white;"></span>
-                                            <span>اعتماد</span>
-                                        </button>
-                                    <?php endif; ?>
+                                    <!-- Delete Button (Danger Red) -->
+                                    <button onclick="smDeletePrep(<?php echo $sub->id; ?>)" class="sm-btn" title="حذف التحضير نهائياً" style="width: 28px; height: 28px; padding: 0; background: #dc2626; color: white !important; border-radius: 6px; border: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                                        <span class="dashicons dashicons-trash" style="font-size: 14px; width: 14px; height: 14px; margin: 0; line-height: 1;"></span>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -1246,6 +1236,109 @@ function typeOfActiveReport() {
     const activeSection = document.querySelector('.eess-report-section[style*="display: block"]');
     return activeSection ? activeSection.id : 'lesson_prep';
 }
+
+window.smQuickApprovePrep = function(prepId) {
+    if (!prepId) return;
+    var btn = document.getElementById('btn-approve-' + prepId);
+    if (btn) btn.disabled = true;
+
+    var formData = new FormData();
+    formData.append('action', 'eess_quick_approve_prep');
+    formData.append('prep_id', prepId);
+    formData.append('sm_nonce', '<?php echo wp_create_nonce("eess_lesson_prep_action"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert('✅ ' + (res.data.message || 'تم اعتماد التحضير بنجاح.'));
+            var row = document.getElementById('prep-row-' + prepId);
+            if (row) {
+                var badgeCell = row.cells[7];
+                if (badgeCell) {
+                    badgeCell.innerHTML = '<span style="display:inline-block; padding:2px 8px; border-radius:50px; font-size:10px; font-weight:bold; background:#dcfce7; color:#15803d;">معتمد</span>';
+                }
+            }
+            if (btn) btn.style.display = 'none';
+        } else {
+            alert('❌ خطأ: ' + (res.data || 'فشل اعتماد التحضير.'));
+            if (btn) btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        alert('❌ حدث خطأ في الاتصال بالخادم.');
+        if (btn) btn.disabled = false;
+    });
+};
+
+window.smDeletePrep = function(prepId) {
+    if (!prepId) return;
+    if (!confirm('هل أنت متأكد من رغبتك في حذف هذا التحضير نهائياً؟')) return;
+
+    var formData = new FormData();
+    formData.append('action', 'eess_bulk_lesson_action');
+    formData.append('bulk_action', 'delete');
+    formData.append('prep_ids[]', prepId);
+    formData.append('sm_nonce', '<?php echo wp_create_nonce("eess_lesson_prep_action"); ?>');
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert('✅ تم حذف التحضير بنجاح.');
+            var row = document.getElementById('prep-row-' + prepId);
+            if (row) row.remove();
+        } else {
+            alert('❌ خطأ: ' + (res.data || 'فشل حذف التحضير.'));
+        }
+    });
+};
+
+window.eessToggleAllPrepCheckboxes = function(master) {
+    var checkboxes = document.querySelectorAll('.eess-prep-cb');
+    checkboxes.forEach(function(cb) {
+        cb.checked = master.checked;
+    });
+};
+
+window.eessExecutePrepBulkAction = function() {
+    var actionSelect = document.getElementById('eess-prep-bulk-action');
+    var action = actionSelect ? actionSelect.value : '';
+    if (!action) {
+        alert('يرجى اختيار الإجراء الجماعي المطلوب.');
+        return;
+    }
+
+    var selectedCbs = document.querySelectorAll('.eess-prep-cb:checked');
+    if (selectedCbs.length === 0) {
+        alert('يرجى تحديد تحضير واحد على الأقل من الجدول.');
+        return;
+    }
+
+    if (action === 'delete' && !confirm('هل أنت متأكد من رغبتك في حذف جميع التحضيرات المحددة نهائياً؟')) {
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('action', 'eess_bulk_lesson_action');
+    formData.append('bulk_action', action);
+    formData.append('sm_nonce', '<?php echo wp_create_nonce("eess_lesson_prep_action"); ?>');
+
+    selectedCbs.forEach(function(cb) {
+        formData.append('prep_ids[]', cb.value);
+    });
+
+    fetch('<?php echo admin_url('admin-ajax.php'); ?>', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            alert('✅ ' + res.data.message);
+            location.reload();
+        } else {
+            alert('❌ خطأ: ' + res.data);
+        }
+    });
+};
 </script>
 
 <!-- Dynamic Lesson Preparation Reporting & Compliance Modal -->
