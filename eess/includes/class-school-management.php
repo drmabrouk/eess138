@@ -118,7 +118,11 @@ class School_Management {
 
         // Registration wizard AJAX actions
         $this->loader->add_action('wp_ajax_nopriv_eess_register_otp', $plugin_public, 'ajax_register_otp');
+        $this->loader->add_action('wp_ajax_eess_register_otp', $plugin_public, 'ajax_register_otp');
+        $this->loader->add_action('wp_ajax_nopriv_eess_register_verify_otp', $plugin_public, 'ajax_register_verify_otp');
+        $this->loader->add_action('wp_ajax_eess_register_verify_otp', $plugin_public, 'ajax_register_verify_otp');
         $this->loader->add_action('wp_ajax_nopriv_eess_register_submit', $plugin_public, 'ajax_register_submit');
+        $this->loader->add_action('wp_ajax_eess_register_submit', $plugin_public, 'ajax_register_submit');
 
         // Print / PDF action
         $this->loader->add_action('wp_ajax_sm_print', $plugin_public, 'ajax_sm_print');
