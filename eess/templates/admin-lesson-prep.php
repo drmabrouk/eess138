@@ -547,11 +547,25 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                 </div>
             </form>
 
+            <!-- Bulk Action Controls Bar -->
+            <?php if ($can_review): ?>
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 12px; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                <label style="font-size: 11px; font-weight: bold; color: #475569;">إجراءات جماعية:</label>
+                <select id="eess-prep-bulk-action" class="sm-input" style="height: 30px; font-size: 11px; padding: 0 8px; width: 150px;">
+                    <option value="">-- اختر إحراء --</option>
+                    <option value="approve">✓ اعتماد جماعي</option>
+                    <option value="delete">🗑️ حذف جماعي</option>
+                </select>
+                <button type="button" onclick="eessExecutePrepBulkAction()" class="sm-btn" style="height: 30px; font-size: 11px; padding: 0 14px; background: #000; color: white !important;">تطبيق</button>
+            </div>
+            <?php endif; ?>
+
             <!-- Table of Submissions -->
-            <div class="sm-table-container">
-                <table class="sm-table">
+            <div class="sm-table-container" style="overflow-x: auto;">
+                <table class="sm-table" style="min-width: 800px;">
                     <thead>
                         <tr>
+                            <th style="width: 30px; text-align: center;"><input type="checkbox" onclick="eessToggleAllPrepCheckboxes(this)" title="تحديد الكل"></th>
                             <th>التاريخ</th>
                             <?php if ($can_review): ?>
                                 <th>المعلم</th>
@@ -628,7 +642,7 @@ $unique_subjects = array_unique(array_map(function($s){ return $s->name; }, $all
                         if (empty($submissions)):
                         ?>
                         <tr>
-                            <td colspan="<?php echo $can_review ? 8 : 7; ?>" style="text-align: center; color: #94a3b8; padding: 25px; font-size: 13px;">لا توجد خطط تحضير مسجلة حالياً تطابق شروط التصفية.</td>
+                            <td colspan="<?php echo $can_review ? 9 : 8; ?>" style="text-align: center; color: #94a3b8; padding: 25px; font-size: 13px;">لا توجد خطط تحضير مسجلة حالياً تطابق شروط التصفية.</td>
                         </tr>
                         <?php
                         else:
