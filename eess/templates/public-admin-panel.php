@@ -1346,6 +1346,7 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                     'sm_principal' => 'مدير المدرسة',
                                     'sm_supervisor' => 'مشرف',
                                     'sm_coordinator' => 'منسق مادة',
+                                    'sm_hod' => 'رئيس قسم',
                                     'sm_teacher' => 'معلم',
                                     'sm_student' => 'طالب',
                                     'sm_parent' => 'ولي أمر',

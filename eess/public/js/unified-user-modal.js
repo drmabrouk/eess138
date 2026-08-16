@@ -138,6 +138,16 @@ window.eessToggleChangePassword = function() {
     }
 };
 
+window.eessSyncUsername = function(empInput) {
+    if (!empInput) return;
+    var clean = empInput.value.replace(/^(EMP|EMP-|_)+/i, '').trim();
+    empInput.value = clean;
+    var usernameInput = document.getElementById('u_username');
+    if (usernameInput) usernameInput.value = clean;
+    var errEl = document.getElementById('err_u_employee_id');
+    if (errEl && clean !== '') errEl.style.display = 'none';
+};
+
 window.eessPreviewAvatar = function(input) {
     if (input.files && input.files[0]) {
         var reader = new FileReader();
@@ -179,10 +189,9 @@ window.eessValidateStep1 = function() {
         valid = false;
     } else { document.getElementById('err_u_last_name').style.display = 'none'; }
 
-    if (!username.value.trim()) {
-        document.getElementById('err_u_username').style.display = 'block';
-        valid = false;
-    } else { document.getElementById('err_u_username').style.display = 'none'; }
+    if (!username.value.trim() && empId.value.trim()) {
+        username.value = empId.value.trim();
+    }
 
     var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email.value.trim())) {
@@ -310,10 +319,15 @@ window.eessLoadUserData = function(userId) {
             var u = res.data;
             document.getElementById('u_first_name').value = u.first_name || '';
             document.getElementById('u_last_name').value = u.last_name || '';
-            document.getElementById('u_username').value = u.user_login || '';
+            var cleanEmpId = (u.employee_id || u.user_login || '').replace(/^(EMP|EMP-|_)+/i, '').trim();
+            document.getElementById('u_employee_id').value = cleanEmpId;
+            document.getElementById('u_username').value = cleanEmpId;
             document.getElementById('u_user_email').value = u.user_email || '';
+            if (u.country_code) {
+                var cc = document.getElementById('u_country_code');
+                if (cc) cc.value = u.country_code;
+            }
             document.getElementById('u_phone_number').value = u.phone_number || '';
-            document.getElementById('u_employee_id').value = u.employee_id || '';
             document.getElementById('u_user_status').value = u.user_status || 'active';
             document.getElementById('u_civil_id').value = u.civil_id || '';
             var normalizedRole = u.role || 'sm_teacher';

@@ -56,11 +56,12 @@ $departments  = class_exists('SM_Settings') ? SM_Settings::get_departments() : a
                         <span class="eess-field-error" id="err_u_last_name" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال اسم العائلة.</span>
                     </div>
 
-                    <!-- Username & Email -->
+                    <!-- Employee ID (Username) & Email -->
                     <div class="sm-form-group">
-                        <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">اسم المستخدم (تسجيل الدخول) <span style="color:#ef4444;">*</span></label>
-                        <input type="text" name="username" id="u_username" class="sm-input" placeholder="مثال: m_ahmed" required style="height: 34px; font-size: 12px; direction: ltr; text-align: right;" onblur="eessCheckUniqueness('username')" oninput="eessValidateField(this)">
-                        <span class="eess-field-error" id="err_u_username" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال اسم مستخدم صالح بدون مسافات.</span>
+                        <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">رقم الموظف الوظيفي / اسم المستخدم <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="employee_id" id="u_employee_id" class="sm-input" placeholder="مثال: 00025" required style="height: 34px; font-size: 12px; font-weight: bold; direction: ltr; text-align: right;" oninput="eessSyncUsername(this)" onblur="eessCheckUniqueness('employee_id')">
+                        <input type="hidden" name="username" id="u_username">
+                        <span class="eess-field-error" id="err_u_employee_id" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال الرقم الوظيفي للموظف بدون بادئة.</span>
                     </div>
                     <div class="sm-form-group">
                         <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">البريد الإلكتروني الرسمي <span style="color:#ef4444;">*</span></label>
@@ -68,16 +69,22 @@ $departments  = class_exists('SM_Settings') ? SM_Settings::get_departments() : a
                         <span class="eess-field-error" id="err_u_user_email" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال بريد إلكتروني صحيح ومستخدم.</span>
                     </div>
 
-                    <!-- Phone Number & Employee ID -->
-                    <div class="sm-form-group">
-                        <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">رقم الهاتف / الجوال <span style="color:#ef4444;">*</span></label>
-                        <input type="text" name="phone_number" id="u_phone_number" class="sm-input" placeholder="0501234567" required style="height: 34px; font-size: 12px; direction: ltr; text-align: right;" oninput="eessValidateField(this)">
+                    <!-- Country Code & Phone Number -->
+                    <div class="sm-form-group" style="grid-column: span 2;">
+                        <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">رمز الدولة ورقم الهاتف / الجوال <span style="color:#ef4444;">*</span></label>
+                        <div style="display: flex; gap: 8px; direction: ltr;">
+                            <select name="country_code" id="u_country_code" class="sm-select" style="height: 34px; font-size: 12px; width: 130px; font-weight: bold;">
+                                <option value="+971">🇦🇪 +971 (الإمارات)</option>
+                                <option value="+966">🇸🇦 +966 (السعودية)</option>
+                                <option value="+965">🇰🇼 +965 (الكويت)</option>
+                                <option value="+974">🇶🇦 +974 (قطر)</option>
+                                <option value="+973">🇧🇭 +973 (البحرين)</option>
+                                <option value="+968">🇴🇲 +968 (عمان)</option>
+                                <option value="+20">🇪🇬 +20 (مصر)</option>
+                            </select>
+                            <input type="text" name="phone_number" id="u_phone_number" class="sm-input" placeholder="501234567" required style="height: 34px; font-size: 12px; flex: 1; text-align: left;" oninput="eessValidateField(this)">
+                        </div>
                         <span class="eess-field-error" id="err_u_phone_number" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال رقم الهاتف.</span>
-                    </div>
-                    <div class="sm-form-group">
-                        <label class="sm-label" style="font-size: 11px; font-weight: 700; color: #334155;">رقم الموظف الوظيفي (ID) <span style="color:#ef4444;">*</span></label>
-                        <input type="text" name="employee_id" id="u_employee_id" class="sm-input" placeholder="EMP-1002" required style="height: 34px; font-size: 12px; font-weight: bold; direction: ltr; text-align: right;" onblur="eessCheckUniqueness('employee_id')" oninput="eessValidateField(this)">
-                        <span class="eess-field-error" id="err_u_employee_id" style="display:none; color:#dc2626; font-size:10px; font-weight:bold; margin-top:2px;">يرجى إدخال الرقم الوظيفي للموظف.</span>
                     </div>
                 </div>
 
