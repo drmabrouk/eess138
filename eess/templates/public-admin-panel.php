@@ -973,16 +973,41 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                 $grades = EESS_Org_Helper::get_grades();
                                 $classes = EESS_Org_Helper::get_classes();
                                 ?>
+                                <!-- Institutional Search Bar -->
+                                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 20px;">
+                                    <div style="display: flex; gap: 12px; align-items: center;">
+                                        <div style="flex: 1;" class="eess-float-container">
+                                            <input type="text" id="eess-inst-search-input" onkeyup="eessFilterInstitutionalStructure()" class="eess-float-input" placeholder=" ">
+                                            <label for="eess-inst-search-input" class="eess-float-label">🔍 البحث السريع في المؤسسات والفروع والأقسام...</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                function eessFilterInstitutionalStructure() {
+                                    var query = document.getElementById('eess-inst-search-input').value.toLowerCase().trim();
+                                    var instCards = document.querySelectorAll('.eess-inst-card');
+                                    instCards.forEach(function(card) {
+                                        var text = card.innerText.toLowerCase();
+                                        if (!query || text.indexOf(query) !== -1) {
+                                            card.style.display = 'block';
+                                        } else {
+                                            card.style.display = 'none';
+                                        }
+                                    });
+                                }
+                                </script>
+
                                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                                     <!-- List Area -->
                                     <div style="background: #fff; padding: 20px; border: 1px solid #cbd5e1; border-radius: 8px;">
-                                        <h4 style="margin: 0 0 15px 0; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">الهيكل الحالي</h4>
+                                        <h4 style="margin: 0 0 15px 0; font-weight: 800; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">الهيكل الحالي والمؤسسات</h4>
                                         <div style="max-height: 500px; overflow-y: auto;">
                                             <?php if (empty($institutions)): ?>
                                                 <p style="color: #64748b; text-align: center;">الهيكل فارغ حالياً.</p>
                                             <?php else: ?>
                                                 <?php foreach ($institutions as $inst): ?>
-                                                    <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #cbd5e1;">
+                                                    <div class="eess-inst-card" style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid #cbd5e1;">
                                                         <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; color: #1e293b;">
                                                             <span>🏛️ <?php echo esc_html($inst->name); ?></span>
                                                             <form method="post" style="display: inline;" onsubmit="return confirm('حذف هذه المؤسسة وكافة الفروع التابعة لها؟')">
@@ -1121,39 +1146,47 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                         <input type="hidden" name="eess_save_org_structure" value="1">
                                         <input type="hidden" name="eess_org_action" value="save_assignment">
 
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                                            <div class="sm-form-group">
-                                                <label class="sm-label">اختر الموظف / المعلم:</label>
-                                                <select name="assign_user_id" class="sm-select" required>
-                                                    <option value="">-- اختر الموظف --</option>
-                                                    <?php
-                                                    $users = get_users();
-                                                    foreach ($users as $u):
-                                                        $r_lbl = !empty($u->roles) ? ($role_map[$u->roles[0]] ?? $u->roles[0]) : 'مستبعد';
-                                                    ?>
-                                                        <option value="<?php echo $u->ID; ?>"><?php echo esc_html($u->display_name); ?> (<?php echo esc_html($r_lbl); ?>)</option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+                                            <div class="eess-form-group">
+                                                <div class="eess-float-container">
+                                                    <select name="assign_user_id" class="eess-float-input" required>
+                                                        <option value="">-- اختر الموظف --</option>
+                                                        <?php
+                                                        $users = get_users();
+                                                        foreach ($users as $u):
+                                                            $r_lbl = !empty($u->roles) ? ($role_map[$u->roles[0]] ?? $u->roles[0]) : 'مستبعد';
+                                                        ?>
+                                                            <option value="<?php echo $u->ID; ?>"><?php echo esc_html($u->display_name); ?> (<?php echo esc_html($r_lbl); ?>)</option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <label class="eess-float-label">اختر الموظف / الكادر *</label>
+                                                </div>
                                             </div>
 
-                                            <div class="sm-form-group">
-                                                <label class="sm-label">تعيين المؤسسة التعليمية:</label>
-                                                <select name="assign_inst_id[]" class="sm-select">
-                                                    <option value="">-- اختر المؤسسة --</option>
-                                                    <?php foreach ($institutions as $inst): ?>
-                                                        <option value="<?php echo $inst->id; ?>"><?php echo esc_html($inst->name); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                            <div class="eess-form-group">
+                                                <div class="eess-float-container">
+                                                    <select name="assign_inst_id[]" class="eess-float-input">
+                                                        <option value="">-- اختر المؤسسة --</option>
+                                                        <?php foreach ($institutions as $inst): ?>
+                                                            <option value="<?php echo $inst->id; ?>"><?php echo esc_html($inst->name); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                    <label class="eess-float-label">تعيين المؤسسة الرئيسية</label>
+                                                </div>
                                             </div>
+                                        </div>
 
-                                            <div class="sm-form-group">
-                                                <label class="sm-label">تعيين المدارس التابعة (متعدد):</label>
-                                                <select name="assign_school_id[]" class="sm-select" multiple style="height: 100px;">
-                                                    <?php foreach ($schools as $sch): ?>
-                                                        <option value="<?php echo $sch->id; ?>"><?php echo esc_html($sch->name); ?></option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                        <div style="margin-bottom: 20px;">
+                                            <label style="font-size: 12px; font-weight: bold; color: #334155; display: block; margin-bottom: 6px;">تحديد المدارس والفروع التابعة التكليف بها (اختيار متعدد):</label>
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; max-height: 120px; overflow-y: auto;">
+                                                <?php foreach ($schools as $sch): ?>
+                                                    <label style="font-size: 12px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                                                        <input type="checkbox" name="assign_school_id[]" value="<?php echo $sch->id; ?>">
+                                                        <span>🏫 <?php echo esc_html($sch->name); ?></span>
+                                                    </label>
+                                                <?php endforeach; ?>
                                             </div>
+                                        </div>
 
                                             <?php if (!empty($grades)): ?>
                                                 <div class="sm-form-group">
@@ -1212,24 +1245,80 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                                             </select>
                                         </div>
 
-                                        <!-- Guidelines Box -->
-                                        <div id="eess-import-template-info" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
-                                            <div id="template-students" style="display: none;">
-                                                <strong>الترتيب المطلوب لأعمدة ملف الطلاب (CSV):</strong><br>
-                                                <code>الاسم, الصف, الشعبة, بريد ولي الأمر, هاتف ولي الأمر, كود الطالب, الحلقة</code><br>
-                                                <span style="color: #64748b;">مثال: أحمد محمد, الصف 12, أ, parent@gmail.com, 0501234567, ST1234, الحلقة الثالثة - Cycle 3</span>
-                                            </div>
-                                            <div id="template-teachers" style="display: none;">
-                                                <strong>الترتيب المطلوب لأعمدة ملف المعلمين (CSV):</strong><br>
-                                                <code>اسم المستخدم, البريد الإلكتروني, الاسم الكامل, رقم الهاتف, كلمة المرور, المادة التخصصية, اسم المدرسة, الصفوف والشعب المكلف بها (مفصولة بفاصلة)</code><br>
-                                                <span style="color: #64748b;">مثال: teacher1, teacher@school.gov.ae, منى علي, 0507654321, Pass123, الرياضيات, مدرسة الأمل للتعليم الأساسي, 12|أ, 11|ب</span>
-                                            </div>
-                                            <div id="template-managers" style="display: none;">
-                                                <strong>الترتيب المطلوب لأعمدة ملف المستخدمين (CSV):</strong><br>
-                                                <code>اسم المستخدم, البريد الإلكتروني, الاسم الكامل, رقم الهاتف, كلمة المرور, الرتبة (sm_principal / sm_supervisor)</code><br>
-                                                <span style="color: #64748b;">مثال: principal1, principal@school.gov.ae, محمد حسن, 0509876543, Pass456, sm_principal</span>
+                                        <!-- Interactive Column Mapping Reference Guide -->
+                                        <div id="eess-import-template-info" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px; line-height: 1.6;">
+                                            <h5 style="margin: 0 0 10px 0; font-weight: 800; color: #0f172a;">📋 دليل تخطيط أعمدة ملفات Excel / CSV المعتمد:</h5>
+                                            <div class="sm-table-container">
+                                                <table class="sm-table" style="font-size: 12px; margin: 0;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>اسم العمود بملف Excel</th>
+                                                            <th>الحقل المقابل بالنظام</th>
+                                                            <th>إلزامي</th>
+                                                            <th>مثال توضيحي</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="eess-mapping-guide-rows">
+                                                        <tr><td colspan="4" style="text-align: center; color: #64748b;">يرجى اختيار نوع البيانات بالأسفل لعرض الدليل الخاص به.</td></tr>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
+
+                                        <script>
+                                        function eessShowImportTemplate(type) {
+                                            var tbody = document.getElementById('eess-mapping-guide-rows');
+                                            if (!tbody) return;
+
+                                            var guides = {
+                                                'students': [
+                                                    { col: 'الاسم / Student Name', sys: 'اسم الطالب', req: 'نعم', ex: 'أحمد محمد علي' },
+                                                    { col: 'الصف / Grade', sys: 'الصف الدراسي', req: 'نعم', ex: 'الصف 10' },
+                                                    { col: 'الشعبة / Section', sys: 'الشعبة / الفصل', req: 'حسب الحاجة', ex: 'أ' },
+                                                    { col: 'الجنسية / Nationality', sys: 'الجنسية', req: 'لا', ex: 'إماراتي' },
+                                                    { col: 'البريد / Email', sys: 'بريد ولي الأمر', req: 'لا', ex: 'parent@domain.com' },
+                                                    { col: 'الهاتف / Phone', sys: 'جوال ولي الأمر', req: 'لا', ex: '0501234567' },
+                                                    { col: 'الهوية / Student ID', sys: 'كود / رقم الهوية', req: 'لا', ex: '784-1990-1234567-1' }
+                                                ],
+                                                'teachers': [
+                                                    { col: 'اسم المستخدم / Username', sys: 'اسم المستخدم / الرقم الوظيفي', req: 'نعم', ex: '00025' },
+                                                    { col: 'البريد / Email', sys: 'البريد الإلكتروني', req: 'نعم', ex: 'teacher@school.ae' },
+                                                    { col: 'الاسم الكامل / Name', sys: 'الاسم الكامل', req: 'نعم', ex: 'سارة أحمد' },
+                                                    { col: 'الهاتف / Phone', sys: 'رقم الهاتف', req: 'لا', ex: '0507654321' },
+                                                    { col: 'كلمة المرور / Password', sys: 'كلمة المرور', req: 'لا (تولد تلقائياً)', ex: 'Pass1234' },
+                                                    { col: 'التخصص / Subject', sys: 'المادة التخصصية', req: 'لا', ex: 'الرياضيات' }
+                                                ],
+                                                'parents': [
+                                                    { col: 'اسم المستخدم / Username', sys: 'اسم المستخدم', req: 'نعم', ex: 'p_00025' },
+                                                    { col: 'البريد / Email', sys: 'البريد الإلكتروني', req: 'نعم', ex: 'parent@domain.com' },
+                                                    { col: 'الاسم / Name', sys: 'اسم ولي الأمر', req: 'نعم', ex: 'خالد عبدالله' },
+                                                    { col: 'كود الابن / Child ID', sys: 'ربط كود الطالب', req: 'لا', ex: 'ST10025' }
+                                                ],
+                                                'users': [
+                                                    { col: 'اسم المستخدم / Username', sys: 'اسم المستخدم', req: 'نعم', ex: 'supervisor1' },
+                                                    { col: 'البريد / Email', sys: 'البريد الإلكتروني', req: 'نعم', ex: 'user@school.ae' },
+                                                    { col: 'الاسم / Name', sys: 'الاسم الكامل', req: 'نعم', ex: 'عمر محمود' },
+                                                    { col: 'الرتبة / Role', sys: 'الدور / الرتبة', req: 'نعم', ex: 'sm_supervisor' }
+                                                ]
+                                            };
+
+                                            var selectedGuide = guides[type];
+                                            if (selectedGuide && selectedGuide.length > 0) {
+                                                var html = '';
+                                                selectedGuide.forEach(function(r) {
+                                                    html += '<tr>' +
+                                                        '<td style="font-weight: bold; color: #1e293b;">' + r.col + '</td>' +
+                                                        '<td style="color: #0284c7; font-weight: bold;">' + r.sys + '</td>' +
+                                                        '<td><span style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; background: ' + (r.req === 'نعم' ? '#fee2e2; color: #991b1b;' : '#f1f5f9; color: #475569;') + '">' + r.req + '</span></td>' +
+                                                        '<td style="color: #64748b;">' + r.ex + '</td>' +
+                                                        '</tr>';
+                                                });
+                                                tbody.innerHTML = html;
+                                            } else {
+                                                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #64748b;">يرجى اختيار نوع البيانات بالأسفل لعرض الدليل الخاص به.</td></tr>';
+                                            }
+                                        }
+                                        </script>
 
                                         <script>
                                         function eessShowImportTemplate(type) {
