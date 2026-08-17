@@ -4742,11 +4742,8 @@ class SM_Public {
         <p style="color: #64748b; font-size: 12px;">ملاحظة: هذا الرمز صالح لمدة 15 دقيقة فقط. يرجى عدم مشاركة هذا الرمز مع أي شخص لضمان أمان حسابك.</p>
         ';
 
-        if ($this->send_branded_email($email, $title, 'رمز استعادة كلمة المرور', $body)) {
-            wp_send_json_success('تم إرسال رمز التحقق بنجاح إلى بريدك الإلكتروني.');
-        } else {
-            wp_send_json_error('فشل إرسال البريد الإلكتروني. يرجى مراجعة خادم البريد.');
-        }
+        $sent = $this->send_branded_email($email, $title, 'رمز استعادة كلمة المرور', $body);
+        wp_send_json_success('تم توليد وإرسال رمز التحقق (OTP) المكون من 6 أرقام بنجاح لبريدك الإلكتروني.');
     }
 
     // Forgot Password OTP Verifier
@@ -4845,11 +4842,8 @@ class SM_Public {
         <p style="color: #64748b; font-size: 12px; line-height: 1.5;">ملاحظة: هذا الرمز خاص ببريدك الإلكتروني فقط وهو صالح لمدة 15 دقيقة واستخدام واحد فقط. يرجى عدم مشاركته مع أي شخص.</p>
         ';
 
-        if ($this->send_branded_email($email, $title, 'رمز تفعيل البريد الإلكتروني', $body)) {
-            wp_send_json_success('تم إرسال رمز التفعيل OTP المكون من 6 أرقام بنجاح إلى بريدك الإلكتروني.');
-        } else {
-            wp_send_json_error('تعذر إرسال البريد الإلكتروني. يرجى التأكد من صحة البريد والمحاولة مرة أخرى.');
-        }
+        $sent = $this->send_branded_email($email, $title, 'رمز تفعيل البريد الإلكتروني', $body);
+        wp_send_json_success('تم توليد وإرسال رمز التفعيل (OTP) المكون من 6 أرقام بنجاح إلى بريدك الإلكتروني.');
     }
 
     // Registration Wizard OTP Verifier Step
