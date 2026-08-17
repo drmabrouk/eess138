@@ -317,7 +317,7 @@ class SM_DB {
     public static function get_records($filters = array()) {
         global $wpdb;
         $scope_filter = EESS_Org_Helper::filter_students_query('s');
-        $query = "SELECT r.*, s.name as student_name, s.class_name, s.section, s.guardian_phone, s.parent_email, s.student_code FROM {$wpdb->prefix}sm_records r JOIN {$wpdb->prefix}sm_students s ON r.student_id = s.id WHERE " . $scope_filter;
+        $query = "SELECT r.*, s.name as student_name, s.class_name, s.section, s.guardian_phone, s.parent_email, s.student_code, s.photo_url, s.nationality, s.school_id, sch.name as school_name FROM {$wpdb->prefix}sm_records r JOIN {$wpdb->prefix}sm_students s ON r.student_id = s.id LEFT JOIN {$wpdb->prefix}eess_schools sch ON s.school_id = sch.id WHERE " . $scope_filter;
         
         if (!empty($filters['student_id'])) {
             $query .= $wpdb->prepare(" AND r.student_id = %d", $filters['student_id']);
