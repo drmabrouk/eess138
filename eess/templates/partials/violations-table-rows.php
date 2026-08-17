@@ -106,11 +106,10 @@
                                 </button>
                             <?php endif; ?>
                         </div>
-                        <div style="font-size: 12px; font-weight: 700; color: #334155; margin-top: 2px;">
-                            <?php echo esc_html($student_id_code); ?>
-                        </div>
-                        <div style="font-size: 11px; font-weight: 500; color: #64748b; margin-top: 1px;">
-                            <?php echo esc_html($nationality_str); ?>
+                        <div style="font-size: 12px; font-weight: 600; color: #475569; margin-top: 3px; display: flex; align-items: center; gap: 6px;">
+                            <span style="font-weight: 800; color: #1e293b;"><?php echo esc_html($student_id_code); ?></span>
+                            <span style="color: #cbd5e1;">|</span>
+                            <span><?php echo esc_html($nationality_str); ?></span>
                         </div>
                     </div>
                 </div>
