@@ -25,8 +25,8 @@
             <?php if (!$is_parent): ?>
                 <!-- Export Reports Dropdown Menu -->
                 <div style="position: relative; display: inline-block;">
-                    <button type="button" onclick="const d = document.getElementById('eess-violation-export-dropdown-new'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" class="sm-btn sm-btn-custom" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; border-radius: 16px; padding: 0 18px; height: 44px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;">
-                        <svg width="18" height="18" fill="none" stroke="#475569" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <button type="button" onclick="const d = document.getElementById('eess-violation-export-dropdown-new'); d.style.display = d.style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" class="eess-invert-btn" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 16px; padding: 0 18px; height: 44px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.background='#0f172a'; this.style.color='#ffffff'; this.style.borderColor='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#0f172a'; this.style.borderColor='#cbd5e1';">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                         <span>تصدير التقارير</span>
                         <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
@@ -44,8 +44,8 @@
                     </div>
                 </div>
 
-                <button type="button" onclick="const f=document.getElementById('violation-import-form'); f.style.display = f.style.display==='none'?'block':'none';" class="sm-btn sm-btn-custom" style="background: #ffffff; color: #334155; border: 1px solid #cbd5e1; border-radius: 16px; padding: 0 18px; height: 44px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;">
-                    <svg width="18" height="18" fill="none" stroke="#475569" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                <button type="button" onclick="const f=document.getElementById('violation-import-form'); f.style.display = f.style.display==='none'?'block':'none';" class="eess-invert-btn" style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; border-radius: 16px; padding: 0 18px; height: 44px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.background='#0f172a'; this.style.color='#ffffff'; this.style.borderColor='#0f172a';" onmouseout="this.style.background='#ffffff'; this.style.color='#0f172a'; this.style.borderColor='#cbd5e1';">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                     استيراد (CSV)
                 </button>
 
@@ -73,8 +73,8 @@
                         البحث عن طالب
                     </label>
                     <div style="position: relative;">
-                        <input type="text" name="student_search" value="<?php echo esc_attr($_GET['student_search'] ?? ''); ?>" placeholder="اسم الطالب / رقم الهوية / الرقم الأكاديمي..." style="width: 100%; height: 46px; padding: 0 46px 0 16px; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
-                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
+                        <input type="text" name="student_search" value="<?php echo esc_attr($_GET['student_search'] ?? ''); ?>" placeholder="اسم الطالب / رقم الهوية / الرقم الأكاديمي..." style="width: 100%; height: 46px; padding: 0 48px 0 16px !important; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
                             <svg width="18" height="18" fill="none" stroke="#94a3b8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </span>
                     </div>
@@ -86,7 +86,7 @@
                         الصف الدراسي
                     </label>
                     <div style="position: relative;">
-                        <select name="class_filter" style="width: 100%; height: 46px; padding: 0 46px 0 28px; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <select name="class_filter" style="width: 100%; height: 46px; padding: 0 48px 0 28px !important; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
                             <option value="">جميع الصفوف</option>
                             <?php
                             global $wpdb;
@@ -95,7 +95,7 @@
                                 <option value="<?php echo esc_attr($c); ?>" <?php selected(isset($_GET['class_filter']) && $_GET['class_filter'] == $c); ?>><?php echo esc_html($c); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
+                        <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
                             <svg width="18" height="18" fill="none" stroke="#94a3b8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                         </span>
                         <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 10px;">▼</span>
@@ -108,7 +108,7 @@
                         الشعبة
                     </label>
                     <div style="position: relative;">
-                        <select name="section_filter" style="width: 100%; height: 46px; padding: 0 46px 0 28px; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <select name="section_filter" style="width: 100%; height: 46px; padding: 0 48px 0 28px !important; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
                             <option value="">جميع الشعب</option>
                             <?php
                             $sections = $wpdb->get_col("SELECT DISTINCT section FROM {$wpdb->prefix}sm_students WHERE section != '' ORDER BY section ASC");
@@ -116,7 +116,7 @@
                                 <option value="<?php echo esc_attr($s); ?>" <?php selected(isset($_GET['section_filter']) && $_GET['section_filter'] == $s); ?>><?php echo esc_html($s); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
+                        <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
                             <svg width="18" height="18" fill="none" stroke="#94a3b8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </span>
                         <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 10px;">▼</span>
@@ -130,13 +130,13 @@
                         نوع المخالفة
                     </label>
                     <div style="position: relative;">
-                        <select name="type_filter" style="width: 100%; height: 46px; padding: 0 46px 0 28px; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
+                        <select name="type_filter" style="width: 100%; height: 46px; padding: 0 48px 0 28px !important; border: 1px solid #cbd5e1; border-radius: 14px; font-size: 13px; outline: none; background: #f8fafc; appearance: none; -webkit-appearance: none; cursor: pointer; transition: all 0.2s;" onfocus="this.style.borderColor='#dc2626'; this.style.background='#fff';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';">
                             <option value="">جميع الأنواع</option>
                             <?php foreach (SM_Settings::get_violation_types() as $k => $v): ?>
                                 <option value="<?php echo esc_attr($k); ?>" <?php selected(isset($_GET['type_filter']) && $_GET['type_filter'] == $k); ?>><?php echo esc_html($v); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
+                        <span style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; display: flex; align-items: center;">
                             <svg width="18" height="18" fill="none" stroke="#94a3b8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                         </span>
                         <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; pointer-events: none; font-size: 10px;">▼</span>
