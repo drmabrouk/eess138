@@ -590,11 +590,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                     'desc' => 'متابعة إحصائيات النظام ومؤشرات الأداء العامة والأنشطة والعمليات الجارية في المنظومة.',
                     'button' => ''
                 ),
-                'stats' => array(
-                    'title' => 'سجل المخالفات',
-                    'desc' => 'رصد ومتابعة السلوك الطلابي وتسجيل المخالفات وتطبيق اللوائح السلوكية والتربوية المعتمدة.',
-                    'button' => ''
-                ),
                 'students' => array(
                     'title' => 'إدارة الطلاب',
                     'desc' => 'إدارة سجلات الطلاب، الملفات الشخصية والأكاديمية، وعمليات استيراد وتصدير بيانات الطلاب.',
@@ -662,35 +657,6 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
                 )
             );
 
-            // Populate buttons dynamically to avoid string nesting quote errors
-            if ($active_tab === 'stats') {
-                $btn_html = '<div style="display: flex; align-items: center; gap: 10px;">';
-                if (!$is_parent) {
-                    $btn_html .= '<button onclick="smOpenViolationModal()" class="sm-btn" style="background:#000; border:1px solid #000; color:#fff; border-radius:8px; font-weight:700; height:38px; display:inline-flex; align-items:center; gap:8px; cursor:pointer;"><span class="dashicons dashicons-plus-alt"></span> تسـجيل مخالفة</button>';
-                    $btn_html .= '<button type="button" onclick="document.getElementById(\'violation-import-form\').style.display=\'block\'" class="sm-btn sm-btn-outline" style="height: 38px; font-size: 13px; cursor:pointer; border-radius: 8px;">📥 استيراد</button>';
-                    $btn_html .= '
-                    <!-- Export Dropdown -->
-                    <div style="position: relative; display: inline-block;">
-                        <button type="button" onclick="jQuery(\'#eess-violation-export-dropdown\').toggle(); event.stopPropagation();" class="sm-btn sm-btn-outline" style="width: auto; height: 38px; display: inline-flex; align-items: center; gap: 5px; border-color: #cbd5e1; cursor: pointer; padding: 0 10px; font-size: 12px; background: #fff; color: #334155; border-radius: 8px;">
-                            <span class="dashicons dashicons-download" style="font-size: 16px; width: 16px; height: 16px; margin: 0; color: #475569;"></span>
-                            <span>تصدير التقارير</span>
-                            <span class="dashicons dashicons-arrow-down-alt2" style="font-size: 10px; width: 10px; height: 10px; margin: 0;"></span>
-                        </button>
-                        <div id="eess-violation-export-dropdown" style="display: none; position: absolute; left: 0; top: 110%; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; width: 220px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 99999; padding: 5px 0; text-align: right;">
-                            <div style="padding: 5px 15px; font-size: 10px; color: #94a3b8; font-weight: bold; border-bottom: 1px solid #f1f5f9;">تحميل ملفات PDF</div>
-                            <a href="' . admin_url('admin-ajax.php?action=sm_print&print_type=violation_report&range=today') . '" target="_blank" style="display: block; padding: 8px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9;">📄 مخالفات اليوم (PDF)</a>
-                            <a href="' . admin_url('admin-ajax.php?action=sm_print&print_type=violation_report&range=week') . '" target="_blank" style="display: block; padding: 8px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9;">📄 مخالفات الأسبوع (PDF)</a>
-                            <a href="' . admin_url('admin-ajax.php?action=sm_print&print_type=violation_report&range=month') . '" target="_blank" style="display: block; padding: 8px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9;">📄 مخالفات الشهر (PDF)</a>
-                            <div style="padding: 5px 15px; font-size: 10px; color: #94a3b8; font-weight: bold; border-bottom: 1px solid #f1f5f9;">تصدير بيانات CSV</div>
-                            <a href="' . admin_url('admin-ajax.php?action=sm_export_violations_csv&range=today&nonce='.wp_create_nonce('sm_export_action')) . '" style="display: block; padding: 8px 15px; color: #334155; font-size: 12px; text-decoration: none; border-bottom: 1px solid #f1f5f9;">📊 مخالفات اليوم (CSV)</a>
-                            <a href="' . admin_url('admin-ajax.php?action=sm_export_violations_csv&range=week&nonce='.wp_create_nonce('sm_export_action')) . '" style="display: block; padding: 8px 15px; color: #334155; font-size: 12px; text-decoration: none;">📊 مخالفات الأسبوع (CSV)</a>
-                        </div>
-                    </div>
-                    ';
-                }
-                $btn_html .= '</div>';
-                $header_map['stats']['button'] = $btn_html;
-            }
             if ($active_tab === 'students') {
                 $header_map['students']['button'] = '
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -1738,9 +1704,9 @@ $greeting = ($hour >= 5 && $hour < 12) ? 'صباح الخير' : 'مساء ال�
 }
 
 /* Standardized Premium Action Buttons (styled exactly like Lesson Prep's buttons) */
-.sm-main-panel .sm-btn,
-.sm-main-panel button[type="submit"],
-.sm-main-panel input[type="submit"] {
+.sm-main-panel .sm-btn:not(.sm-btn-custom),
+.sm-main-panel button[type="submit"]:not(.sm-btn-custom),
+.sm-main-panel input[type="submit"]:not(.sm-btn-custom) {
     background-color: #334155 !important; /* Primary Monochromatic Slate */
     color: #ffffff !important;
     border: 1px solid #334155 !important;
